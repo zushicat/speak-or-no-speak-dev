@@ -41,6 +41,7 @@
  */
 
 import { VadEngine } from "./vad-engine.js";
+import { ERROR_CODES, SpeakError } from "../errors.js";
 
 /** vad-web dist base — also where the worklet bundle + silero_vad_v5.onnx live. */
 const VAD_WEB_BASE = "https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.31/dist/";
@@ -72,8 +73,14 @@ function computeRms(frame) {
  * @augments {VadEngine}
  */
 export class SileroVadAdapter extends VadEngine {
-  constructor() {
+  /**
+   * @param {Object} [options]
+   * @param {MediaTrackConstraints} [options.mic]  overrides merged over the
+   *        AEC defaults (echoCancellation/noiseSuppression/autoGainControl on)
+   */
+  constructor(options = {}) {
     super();
+    this.micConstraints = { ...AEC_CONSTRAINTS, ...(options.mic ?? {}) };
     /** @type {FrameCallback[]} */
     this.frameCallbacks = [];
     /** @type {ErrorCallback[]} */
@@ -121,9 +128,10 @@ export class SileroVadAdapter extends VadEngine {
    * processor ("auto" → AudioWorklet); on timeout (worklet module load hang) or
    * error, retries with `processorType: "ScriptProcessor"` (no worklet needed).
    * @private
+   * @param {{MicVAD: {new(options: any): Promise<any>}}} vadLib the resolved library (CDN global or npm module)
    * @returns {Promise<any>} the MicVAD instance
    */
-  async _newVadWithFallback() {
+  async _newVadWithFallback(vadLib) {
     const attempt = async (processorType) => {
       const options = {
         model: "v5", // Silero v5 (plan T1) — 0.0.31 default is "legacy"
@@ -150,9 +158,9 @@ export class SileroVadAdapter extends VadEngine {
       if (processorType) options.processorType = processorType;
 
       const timeout = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`vad-new-timeout (${processorType ?? "auto"})`)), VAD_NEW_TIMEOUT_MS)
+        setTimeout(() => reject(new SpeakError(ERROR_CODES.ENGINE_LOAD_FAILED, `vad-new-timeout (${processorType ?? "auto"})`)), VAD_NEW_TIMEOUT_MS)
       );
-      return Promise.race([window.vad.MicVAD.new(options), timeout]);
+      return Promise.race([vadLib.MicVAD.new(options), timeout]);
     };
 
     try {
@@ -172,26 +180,48 @@ export class SileroVadAdapter extends VadEngine {
    * Open the mic with AEC constraints and start Silero inference.
    * Resolves when the first frame is emitted (interface contract); rejects
    * (and reports via onError) if no frames arrive within 5 s.
+   *
+   * Dual-mode library resolution (WP7 §7.5):
+   * 1. `window.vad` present (pinned CDN `<script>` tags) → zero-build mode;
+   * 2. else dynamic `import("@ricky0123/vad-web")` → bundler/npm consumers;
+   * 3. both fail → `cdn-unavailable` error → the FACADE switches to the
+   *    energy fallback engine (degraded.engine = "energy").
    * @returns {Promise<void>}
    */
   async start() {
     // Guard (plan 1.3.6): module must stay importable in Node and fail soft
     // in the browser when the CDN scripts did not load.
     if (typeof window === "undefined" || typeof navigator === "undefined") {
-      this._emitError("cdn-unavailable", "SileroVadAdapter requires a browser environment.");
-      throw new Error("cdn-unavailable");
+      this._emitError(ERROR_CODES.INSECURE_CONTEXT, "SileroVadAdapter requires a browser environment.");
+      throw new SpeakError(ERROR_CODES.INSECURE_CONTEXT, "SileroVadAdapter requires a browser environment.");
     }
-    if (!window.vad || typeof window.vad.MicVAD?.new !== "function") {
+
+    // 1. CDN globals (zero-build, D1)
+    let vadLib = typeof window.vad?.MicVAD?.new === "function" ? window.vad : null;
+    // 2. npm/bundler mode: the package resolves via the bundler or node_modules
+    if (!vadLib) {
+      try {
+        vadLib = await import("@ricky0123/vad-web");
+      } catch {
+        /* mode 2 unavailable — zero-build page without CDN */
+      }
+    }
+    if (!vadLib?.MicVAD?.new) {
       this._emitError(
-        "cdn-unavailable",
-        "window.vad is missing — the pinned CDN scripts did not load (see index.html)."
+        ERROR_CODES.CDN_UNAVAILABLE,
+        "VAD library unavailable — neither the pinned CDN scripts (window.vad) nor the @ricky0123/vad-web package could be loaded."
       );
-      throw new Error("cdn-unavailable");
+      throw new SpeakError(ERROR_CODES.CDN_UNAVAILABLE, "VAD library unavailable (CDN + npm import)");
     }
 
     try {
       // 1. Mic with AEC constraints (plan 1.3.1) — our stream, not vad-web's default.
-      this.stream = await navigator.mediaDevices.getUserMedia({ audio: AEC_CONSTRAINTS });
+      if (!navigator.mediaDevices?.getUserMedia) {
+        const msg = "Microphone API unavailable — this page is not running in a secure context (serve via http://localhost, never file://).";
+        this._emitError(ERROR_CODES.INSECURE_CONTEXT, msg);
+        throw new SpeakError(ERROR_CODES.INSECURE_CONTEXT, msg);
+      }
+      this.stream = await navigator.mediaDevices.getUserMedia({ audio: this.micConstraints });
       const track = this.stream.getAudioTracks()[0];
       this.micSettings = track.getSettings();
       // eslint-disable-next-line no-console
@@ -200,7 +230,7 @@ export class SileroVadAdapter extends VadEngine {
         // Interim warning code; facade switches to stricter barge-in gating in WP5.
         this.aecDegraded = true;
         this._emitError(
-          "no-aec",
+          ERROR_CODES.NO_AEC,
           `echoCancellation is not active on the mic track (settings: ${JSON.stringify(this.micSettings)})`
         );
       }
@@ -213,7 +243,7 @@ export class SileroVadAdapter extends VadEngine {
       const firstFrame = new Promise((resolve) => {
         this._firstFrameResolve = resolve;
       });
-      this.vad = await this._newVadWithFallback();
+      this.vad = await this._newVadWithFallback(vadLib);
 
       // 5. Our state machine (WP3) owns turn events — vad-web's internal
       //    segmentation (onSpeechStart/onSpeechEnd) stays unwired by design.
@@ -227,15 +257,24 @@ export class SileroVadAdapter extends VadEngine {
       );
       await Promise.race([firstFrame, timeout]);
     } catch (err) {
-      if (err && err.name === "NotAllowedError") {
-        this._emitError("mic-denied", "Microphone permission denied.");
-      } else if (err && err.message === "vad-no-frames") {
-        this._emitError("vad-no-frames", "Engine started but no frames arrived within 5 s.");
-      } else {
-        this._emitError("vad-init-failed", `MicVAD init/start failed: ${err?.message ?? err}`);
+      if (err instanceof SpeakError) {
+        this.stop();
+        throw err; // already emitted with its taxonomy code
       }
-      this.stop();
-      throw err;
+      if (err && err.name === "NotAllowedError") {
+        this._emitError(ERROR_CODES.MIC_DENIED, "Microphone permission denied.");
+        throw new SpeakError(ERROR_CODES.MIC_DENIED, "Microphone permission denied.", err);
+      }
+      if (err && err.name === "NotFoundError") {
+        this._emitError(ERROR_CODES.MIC_NOT_FOUND, "No microphone found on this device.");
+        throw new SpeakError(ERROR_CODES.MIC_NOT_FOUND, "No microphone found", err);
+      }
+      if (err && err.message === "vad-no-frames") {
+        this._emitError(ERROR_CODES.VAD_NO_FRAMES, "Engine started but no frames arrived within 5 s.");
+        throw new SpeakError(ERROR_CODES.VAD_NO_FRAMES, "no frames within 5 s", err);
+      }
+      this._emitError(ERROR_CODES.ENGINE_LOAD_FAILED, `MicVAD init/start failed: ${err?.message ?? err}`);
+      throw new SpeakError(ERROR_CODES.ENGINE_LOAD_FAILED, "MicVAD init/start failed", err);
     }
   }
 

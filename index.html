@@ -1,34 +1,48 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Speak Or No Speak — WP1 smoke</title>
-  <style>
-    body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; padding: 0 1rem; }
-    code { background: #f2f2f2; padding: 0.1rem 0.3rem; border-radius: 4px; }
-    #indicator {
-      width: 8rem; height: 8rem; border-radius: 50%;
-      background: #ff9800; /* orange = not listening (naive pre-WP2 check) */
-      margin: 1rem 0; transition: background 0.15s;
-    }
-    #indicator.speech { background: #4caf50; } /* green = speech detected (D2) */
-    #status { font-family: ui-monospace, monospace; white-space: pre-wrap; }
-  </style>
-  <!-- WP1 (D1): pinned CDN runtime libs — must load BEFORE our module script.
-       They register the globals `ort` and `vad`, read only inside
-       src/vad/silero-vad-adapter.js (single choke point). -->
-  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.31/dist/bundle.min.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speak Or No Speak — demo</title>
+<style>
+  body { font-family: system-ui, sans-serif; display: grid; place-items: center;
+         min-height: 100vh; margin: 0; background: #14161a; color: #eee; }
+  .card { text-align: center; }
+  #dot { width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 16px;
+         background: #f59e0b; transition: background 150ms; }
+  body.listening #dot { background: #22c55e; }
+  #label { font-size: 28px; }
+  button { margin-top: 24px; padding: 10px 20px; font-size: 16px;
+           border-radius: 8px; border: 0; cursor: pointer; }
+  #err { color: #f87171; min-height: 20px; margin-top: 8px; max-width: 24rem; }
+  #dbg { opacity: .45; font-size: 12px; margin-top: 12px; font-family: ui-monospace, monospace; }
+  #save { display: inline-block; margin-top: 10px; font-size: 13px; color: #93c5fd; }
+  #agentRow { margin-top: 20px; display: flex; gap: 8px; justify-content: center; align-items: center; }
+</style>
+<!-- Pinned CDN runtime libs (D1) — register globals `ort` and `vad`; read only
+     inside src/vad/silero-vad-adapter.js. -->
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.31/dist/bundle.min.js"></script>
 </head>
 <body>
-  <h1>Speak Or No Speak</h1>
-  <p>WP1 smoke page — frame probabilities from Silero VAD v5. The real
-     green/orange demo page lands in WP2
-     (<code>plans/initial/work-packages/wp2-demo-indicator-page.md</code>).</p>
-  <div id="indicator"></div>
-  <button id="start">Start microphone</button>
-  <pre id="status"></pre>
+  <div class="card">
+    <div id="dot"></div>
+    <div id="label" aria-live="polite">press start</div>
+    <button id="start">Start microphone</button>
+    <label style="font-size:13px; display:block; margin-top:8px"><input type="checkbox" id="smartTurn"> Smart Turn (+8 MB, semantic end-of-turn)</label>
+    <div id="err"></div>
+    <div id="dbg"></div>
+    <a id="save" hidden download="turn.wav">Save last turn (.wav)</a>
+    <div id="agentRow" hidden>
+      <select id="ttsVol" aria-label="TTS volume">
+        <option value="0.3">30 %</option>
+        <option value="0.5" selected>50 %</option>
+        <option value="1">100 %</option>
+      </select>
+      <button id="agent">Simulate agent answer</button>
+      <button id="agentStop" hidden>Stop agent</button>
+    </div>
+  </div>
   <script type="module" src="./demo/main.js"></script>
 </body>
 </html>

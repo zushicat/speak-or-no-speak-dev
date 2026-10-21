@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speak Or No Speak — calibration harness</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; background: #14161a; color: #eee; }
+  main { max-width: 60rem; margin: 0 auto; padding: 1rem 1.5rem 4rem; }
+  h1 { font-size: 20px; } h2 { font-size: 16px; margin-top: 2rem; border-top: 1px solid #333; padding-top: 1rem; }
+  canvas { background: #0d0f12; border: 1px solid #333; width: 100%; height: 160px; }
+  button { padding: 8px 14px; font-size: 14px; border-radius: 8px; border: 0; cursor: pointer; margin-right: 6px; }
+  button.rec { background: #ef4444; color: white; }
+  button.mark { background: #22c55e; color: #052; }
+  button.mark2 { background: #f59e0b; color: #331; }
+  input, select { padding: 6px 8px; border-radius: 6px; border: 1px solid #444; background: #1c1f24; color: #eee; }
+  table { border-collapse: collapse; margin-top: 0.5rem; font-size: 13px; }
+  td, th { border: 1px solid #333; padding: 4px 8px; text-align: left; }
+  .row { margin: 8px 0; }
+  .muted { opacity: .55; font-size: 12px; }
+  #recStatus { font-family: ui-monospace, monospace; font-size: 13px; }
+  .recList button { margin: 2px 4px 2px 0; font-size: 12px; padding: 4px 8px; }
+  #prompt { position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+            background: #22c55e; color: #052; font-size: 22px; font-weight: 700;
+            padding: 14px 28px; border-radius: 12px; z-index: 10; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.31/dist/bundle.min.js"></script>
+</head>
+<body>
+<main>
+  <h1>Calibration harness <a href="/" style="color:#93c5fd;font-size:13px">← demo</a></h1>
+
+  <h2>1 · Live timeline</h2>
+  <canvas id="timeline" width="900" height="160"></canvas>
+  <div class="muted">prob (green) · rms (yellow) · onset marker (bright green) · turn end (orange) · interrupt (red)</div>
+  <div class="row"><button id="hStart">Start microphone</button> <span id="hStatus" class="muted"></span></div>
+
+  <h2>2 · Scenario recorder</h2>
+  <div class="row">
+    <input id="scenName" placeholder="scenario name (e.g. s1-short-commands)" size="32">
+    <button id="recStart" class="rec">● Record</button>
+    <button id="recStop" disabled>■ Stop</button>
+    <span id="recStatus"></span>
+  </div>
+  <div class="row">
+    <button id="markStart" class="mark" disabled>user started speaking</button>
+    <button id="markEnd" class="mark2" disabled>user finished</button>
+    <span class="muted">press in real time — ground truth</span>
+  </div>
+  <h3 style="font-size:14px">Saved recordings (localStorage, last 10)</h3>
+  <div id="recList" class="recList"></div>
+
+  <h2>3 · Offline replay + metrics</h2>
+  <div class="row">
+    <select id="replayPick"></select>
+    <button id="replayAll">Replay ALL → metrics</button>
+    <label class="muted"><input type="checkbox" id="useRecordedThresholds"> use recorded thresholds (else current config)</label>
+  </div>
+  <table id="metricsTable"><thead><tr>
+    <th>scenario</th><th>onsets</th><th>onset p50/p95</th><th>turnEnds</th><th>turnEnd p50/p95</th>
+    <th>interrupts</th><th>int p50/p95</th><th>false onsets</th><th>premature</th>
+  </tr></thead><tbody></tbody></table>
+  <div id="aggRow" class="muted"></div>
+</main>
+<div id="prompt" hidden></div>
+<script type="module" src="./harness-main.js"></script>
+</body>
+</html>

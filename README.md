@@ -30,3 +30,97 @@ static server, runtime libraries pinned via CDN `<script>` tags.
 ## Status
 
 Work in progress — see plans/initial/plan-initial.md.
+
+## Embedding (WP7 — two modes, same API)
+
+### Mode 1 · zero-build page (CDN script tags)
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.31/dist/bundle.min.js"></script>
+<script type="module">
+  import { createSpeakOrNoSpeak } from "./src/index.js";
+  const sons = await createSpeakOrNoSpeak({
+    onSpeechStart: () => console.log("user started"),
+    onTurnEnd: (e) => console.log("turn end", e.durationMs, "ms"),
+    onInterrupt: (i) => console.log("barge-in after", i.latencyMs, "ms"),
+  });
+  await sons.start(); // call from a user gesture (Safari)
+</script>
+```
+
+### Mode 2 · bundler / npm
+
+    npm i speak-or-no-speak @ricky0123/vad-web onnxruntime-web
+
+```js
+import { createSpeakOrNoSpeak } from "speak-or-no-speak";
+// same API; the adapter auto-imports @ricky0123/vad-web when window.vad is absent
+```
+
+ESM-only (`"type": "module"`); the adapter resolves the library in this order:
+`window.vad` (CDN) → `import("@ricky0123/vad-web")` (bundler) → energy fallback.
+Serve over **https or localhost** — microphone access needs a secure context.
+
+## Known limitations
+
+- **Browser AEC cancels only browser-played audio** (TTS/`<audio>`/WebAudio in
+  the same tab). Other apps' audio (TV, music players) relies on the
+  confirm-window gating alone.
+- **No AEC** (unsupported platform / forced off): the module auto-switches to
+  stricter barge-in gating (`degraded.aec = true`); loud speakers may still
+  cause false interrupts — recommend headphones.
+- **Energy fallback** (`degraded.engine = "energy"`): noise-blind by design
+  (RMS vs adaptive floor) — a degraded mode, always flagged, never silent.
+- **Safari**: AudioWorklet module load can hang in some versions → the
+  adapter auto-falls back to `ScriptProcessor` (verified path); TTS
+  `speechSynthesis` quirks (async voice loading, `pause()` flakiness) affect
+  only the demo, not the module. iOS Safari: mic requires a user gesture; AEC
+  quality unverified — mobile support out of scope for v1.
+
+## Agent integration (read this, app authors!)
+
+While your app plays audio (TTS etc.), call `setAgentSpeaking(true)`; call
+`setAgentSpeaking(false)` the moment your output stops.
+
+- With the flag **armed**, no `onTurnEnd` and no `onSpeechStart` events fire.
+  Confirmed user speech triggers `onInterrupt` instead (barge-in, S3).
+- Forgetting to **disarm** permanently silences turn detection — a turn that
+  already reached its redemption window flushes at the moment you disarm.
+- The interrupt carries `{ atMs, latencyMs }` (ms since the flag was armed /
+  voice-onset-to-event latency).
+
+```js
+const sons = await createSpeakOrNoSpeak({ onTurnEnd, onInterrupt, /* … */ });
+await sons.start();
+sons.setAgentSpeaking(true);   // agent starts talking
+// … user barges in → onInterrupt → stop TTS playback …
+sons.setAgentSpeaking(false);  // agent output ended — ALWAYS call this
+```
+
+### Post-interrupt contract (WP5)
+
+1. `onInterrupt` fires → **immediately cancel your TTS/LLM stream**. This is
+   the latency-sensitive path — do not await anything before cancelling.
+2. Call `setAgentSpeaking(false)` once your output is actually stopped.
+3. Turn accumulation continued throughout: the interrupting utterance arrives
+   as the next `onTurnEnd` with `afterInterrupt: true`.
+4. A 500 ms grace after the interrupt ignores silence — the turn is not
+   sliced mid-word ("hey, sto—" stays one turn).
+5. While the flag is set, `onTurnEnd`/`onSpeechStart` do not fire — app code
+   must not depend on them during agent speech.
+
+### Echo cancellation scope (important!)
+
+Browser AEC (`echoCancellation: true`) removes **audio played by the same
+browser tab** — TTS via `speechSynthesis` or `<audio>`/WebAudio playback.
+Audio from *other apps* (music players, other people's TVs) is **not**
+cancelled; barge-in gating (confirm windows) is the only protection there.
+
+If the mic track reports `echoCancellation !== true` (unsupported platform,
+forced off, or `?noaec=1` in the demo), the module switches to stricter
+gating automatically (`degraded.aec === true`): ~300 ms barge-in confirm AND
+the frame rms must exceed 2× the rolling mean rms of the last second of
+agent-only playback. Without AEC, loud speakers may still cause false
+interrupts — recommend headphones and surface `degraded.aec` in your UI.
+

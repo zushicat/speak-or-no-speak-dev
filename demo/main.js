@@ -1,98 +1,150 @@
 /**
- * WP1 smoke wiring (plan 1.4 + 1.5) — will be replaced by the real demo in WP2.
- * UI mapping only; all detection logic lives in src/.
+ * Demo wiring — UI MAPPING ONLY (WP3/WP4/WP5). Contains NO detection logic:
+ * all onset/turn/barge-in decisions live in the facade's TurnDetector; this
+ * file maps facade events → DOM and simulates an agent via speechSynthesis.
  */
-import { SileroVadAdapter } from "../src/vad/silero-vad-adapter.js";
-
-// WP0.5 probe kept: secure context must hold for mic access.
-console.log("secure context:", window.isSecureContext,
-            "mediaDevices:", !!navigator.mediaDevices);
+import { createSpeakOrNoSpeak, humanMessage, SmartTurnModel } from "../src/index.js";
+import { encodeWav } from "../src/wav-export.js";
 
 const button = document.getElementById("start");
-const indicator = document.getElementById("indicator");
-const statusEl = document.getElementById("status");
+const label = document.getElementById("label");
+const errEl = document.getElementById("err");
+const dbg = document.getElementById("dbg");
+const saveLink = document.getElementById("save");
+const agentRow = document.getElementById("agentRow");
+const agentButton = document.getElementById("agent");
+const agentStopButton = document.getElementById("agentStop");
+const ttsVol = document.getElementById("ttsVol");
+let lastTurnUrl = null;
 
-// --- 1.5 performance probe state -------------------------------------------
-const handlerDurationsMs = [];
-const frameIntervalsMs = [];
-let lastFrameAt = 0;
-let frameCount = 0;
-let probeTimer = null;
-// Live perf arrays for external probes (WP1 verification tooling).
-window.__sonsPerf = { handlerDurationsMs, frameIntervalsMs, frameCountRef: () => frameCount };
+/** WP5 §5.2: collected interrupt latencies (t_voice → t_event), for the results table. */
+const agentLog = { latenciesMs: [], interrupts: 0 };
+window.__agentLog = agentLog; // tooling handle
 
-function percentile(sorted, p) {
-  if (sorted.length === 0) return NaN;
-  const idx = Math.min(sorted.length - 1, Math.ceil((p / 100) * sorted.length) - 1);
-  return sorted[Math.max(0, idx)];
-}
+button.addEventListener("click", startMic);
+agentButton.addEventListener("click", simulateAgent);
+agentStopButton.addEventListener("click", stopAgent);
 
-function logPerfSummary() {
-  const durations = [...handlerDurationsMs].sort((a, b) => a - b);
-  const intervals = [...frameIntervalsMs].sort((a, b) => a - b);
-  const summary = {
-    frames: frameCount,
-    handler_p50_ms: +percentile(durations, 50).toFixed(3),
-    handler_p95_ms: +percentile(durations, 95).toFixed(3),
-    frame_interval_p50_ms: +percentile(intervals, 50).toFixed(1),
-    frame_interval_p95_ms: +percentile(intervals, 95).toFixed(1),
-    verdict: percentile(durations, 95) < 8
-      ? "main-thread inference OK (p95 < 8 ms)"
-      : "p95 >= 8 ms → WP7 worker contingency must trigger",
-  };
-  console.log("[sons] perf summary after 60 s:", summary);
-}
+/** Long filler text — takes ~40 s at rate 0.9. */
+const LONG_TEXT = (
+  "The quick brown fox jumps over the lazy dog while the rain in Spain falls mainly on the plain. " +
+  "Nobody expects the Spanish Inquisition on a Tuesday morning in the middle of October. " +
+  "It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness. " +
+  "To be or not to be, that is the question, whether tis nobler in the mind to suffer the slings and arrows of outrageous fortune. " +
+  "The answers are out there, floating in the ether, waiting for someone to ask the right questions. "
+).repeat(3);
 
-// --- 1.4 smoke wiring -------------------------------------------------------
-button.addEventListener("click", async () => {
+let sons = null;
+let agentArmed = false;
+
+async function startMic() {
   button.disabled = true;
-  statusEl.textContent = "starting…\n";
+  errEl.textContent = "";
+  label.textContent = "starting…";
 
-  const engine = new SileroVadAdapter();
-  window.__sonsEngine = engine; // debug handle (WP1 smoke; useful until WP3 tests)
-  engine.onError((err) => {
-    // Clean error path — including the cdn-unavailable guard (acceptance last bullet).
-    console.error("[sons] onError:", err);
-    statusEl.textContent += `error [${err.code}]: ${err.message}\n`;
-    button.disabled = false;
+  // WP5 §5.4: `?noaec=1` forces echoCancellation off to exercise the
+  // no-AEC fallback branch on any machine.
+  const forceNoAec = new URLSearchParams(location.search).has("noaec");
+  const mic = forceNoAec ? { echoCancellation: false } : undefined;
+
+  // WP8: optional semantic end-of-turn model (checkbox; +8 MB asset).
+  const turnModel = document.getElementById("smartTurn")?.checked
+    ? new SmartTurnModel()
+    : undefined;
+
+  sons = await createSpeakOrNoSpeak({
+    mic,
+    turnModel,
+    onSpeechStart: () => {
+      document.body.classList.add("listening");
+      label.textContent = agentArmed ? "agent speaking… (interruptable)" : "listening";
+    },
+    onTurnEnd: (e) => {
+      document.body.classList.remove("listening");
+      label.textContent = agentArmed ? "agent speaking… (interruptable)" : "not listening";
+      // turn-finished log line (WP2 behavior spec)
+      dbg.textContent = `turn: ${(e.durationMs / 1000).toFixed(1)} s` +
+        (e.truncated ? " (truncated)" : "") + (e.afterInterrupt ? " (after interrupt)" : "");
+      // WP4: downloadable WAV of the turn — the primary tool for checking
+      // onset clipping / pad length by ear.
+      if (lastTurnUrl) URL.revokeObjectURL(lastTurnUrl);
+      const blob = encodeWav(e.audio, 16000);
+      lastTurnUrl = URL.createObjectURL(blob);
+      saveLink.href = lastTurnUrl;
+      saveLink.hidden = false;
+    },
+    // S3 (WP5): barge-in while the agent speaks → cancel TTS immediately.
+    onInterrupt: (info) => {
+      agentLog.interrupts++;
+      agentLog.latenciesMs.push(info.latencyMs);
+      speechSynthesis.cancel();
+      disarmAgent();
+      dbg.textContent = `interrupt after ${info.atMs} ms (latency ${info.latencyMs} ms)`;
+      console.log(`[sons] INTERRUPT after ${info.atMs} ms armed, latency ${info.latencyMs} ms`);
+    },
+    onLevel: () => {},
+    onError: onError,
+    debug: false,
   });
-
-  engine.onFrame((frame) => {
-    // 1.5: measure handler time (the number that decides worker contingency).
-    const t0 = performance.now();
-
-    frameCount += 1;
-    if (lastFrameAt > 0) frameIntervalsMs.push(performance.now() - lastFrameAt);
-    lastFrameAt = performance.now();
-
-    // 1.4: every 10th frame → console; naive indicator (pre-WP2 sanity check, D2).
-    if (frameCount % 10 === 0) {
-      console.log(`[sons] frame #${frameCount} prob=${frame.probability.toFixed(3)} rms=${frame.rms.toFixed(4)}`);
-    }
-    indicator.classList.toggle("speech", frame.probability > 0.6);
-    if (frameCount % 5 === 0) {
-      statusEl.textContent = `frames: ${frameCount}  last prob: ${frame.probability.toFixed(3)}  rms: ${frame.rms.toFixed(4)}\n` +
-        (engine.micSettings
-          ? `mic: echoCancellation=${engine.micSettings.echoCancellation} ` +
-            `noiseSuppression=${engine.micSettings.noiseSuppression} ` +
-            `autoGainControl=${engine.micSettings.autoGainControl} ` +
-            `sampleRate=${engine.micSettings.sampleRate ?? "?"} ` +
-            `aecDegraded=${engine.aecDegraded}\n`
-          : "");
-    }
-
-    handlerDurationsMs.push(performance.now() - t0);
-  });
+  window.__sons = sons; // debug handle (tooling)
 
   try {
-    await engine.start(); // mic + model load happen inside the user gesture
-    const settings = engine.micSettings ?? {};
-    console.log("[sons] mic track settings (once):", settings);
-    console.log("[sons] engine runtime findings: frameParamProvided =", engine.frameParamProvided);
-    statusEl.textContent += "listening — speak and watch the circle/console.\n";
-    probeTimer = setTimeout(logPerfSummary, 60_000); // 1.5: summary after 60 s
-  } catch (err) {
-    // onError already reported the taxonomy code; keep the button usable.
+    await sons.start();
+    label.textContent = "not listening";
+    button.hidden = true;
+    agentRow.hidden = false;
+    if (forceNoAec || sons.degraded.aec) {
+      errEl.textContent = humanMessage("no-aec");
+    }
+    if (sons.degraded.engine === "energy") {
+      errEl.textContent = humanMessage("engine-fallback");
+    }
+  } catch {
+    // onError already rendered the message; restore usability for a retry.
     button.disabled = false;
+    label.textContent = "press start";
   }
-});
+}
+
+/** WP5 §5.1: simulate an agent answer through the browser's audio path. */
+function simulateAgent() {
+  if (!sons || agentArmed) return;
+  const utter = new SpeechSynthesisUtterance(LONG_TEXT);
+  utter.volume = parseFloat(ttsVol.value);
+  utter.rate = 0.9;
+  utter.onend = () => {
+    if (agentArmed) {
+      disarmAgent();
+      dbg.textContent = "agent finished (no interrupt)";
+    }
+  };
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utter);
+  agentArmed = true;
+  sons.setAgentSpeaking(true);
+  label.textContent = "agent speaking… (interruptable)";
+  agentButton.disabled = true;
+  agentStopButton.hidden = false;
+}
+
+function stopAgent() {
+  speechSynthesis.cancel();
+  if (agentArmed) {
+    disarmAgent();
+    dbg.textContent = "agent stopped manually";
+  }
+}
+
+function disarmAgent() {
+  agentArmed = false;
+  sons?.setAgentSpeaking(false);
+  label.textContent = "not listening";
+  agentButton.disabled = false;
+  agentStopButton.hidden = true;
+}
+
+function onError(err) {
+  errEl.textContent = humanMessage(err.code) ?? `Error (${err.code}): ${err.message}`;
+  // eslint-disable-next-line no-console
+  console.error("[sons] onError:", err);
+}
