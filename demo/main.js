@@ -5,6 +5,7 @@
  */
 import { createSpeakOrNoSpeak, humanMessage, SmartTurnModel } from "../src/index.js";
 import { encodeWav } from "../src/wav-export.js";
+import { CloudStubAdapter } from "../src/stt/cloud-stub-adapter.js";
 
 const button = document.getElementById("start");
 const label = document.getElementById("label");
@@ -15,7 +16,34 @@ const agentRow = document.getElementById("agentRow");
 const agentButton = document.getElementById("agent");
 const agentStopButton = document.getElementById("agentStop");
 const ttsVol = document.getElementById("ttsVol");
+const transcribeToggle = document.getElementById("transcribe");
+const sttEndpoint = document.getElementById("sttEndpoint");
+const sttRow = document.getElementById("sttRow");
+const logEl = document.getElementById("log");
 let lastTurnUrl = null;
+
+/** Timestamped event log (WP9 demo: transcription results + errors). */
+function logLine(text, isError = false) {
+  const line = document.createElement("div");
+  if (isError) line.className = "err";
+  line.textContent = `${new Date().toISOString().slice(11, 23)} ${text}`;
+  logEl.prepend(line);
+  while (logEl.children.length > 20) logEl.lastChild.remove();
+}
+
+/** WP9: STT strictly outside the real-time loop — called from onTurnEnd only,
+ *  fire-and-forget with a catch; failures never touch detection events. */
+function transcribeTurn(audio) {
+  if (!transcribeToggle.checked || !sttEndpoint.value.trim()) return;
+  try {
+    const adapter = new CloudStubAdapter({ endpoint: sttEndpoint.value.trim() });
+    adapter.transcribe(audio)
+      .then((t) => logLine(`💬 "${t.text}"${t.confidence !== undefined ? ` (${(t.confidence * 100).toFixed(0)}%)` : ""}`))
+      .catch((err) => logLine(`STT failed: ${err.message}`, true));
+  } catch (err) {
+    logLine(`STT setup failed: ${err.message}`, true);
+  }
+}
 
 /** WP5 §5.2: collected interrupt latencies (t_voice → t_event), for the results table. */
 const agentLog = { latenciesMs: [], interrupts: 0 };
@@ -72,6 +100,7 @@ async function startMic() {
       lastTurnUrl = URL.createObjectURL(blob);
       saveLink.href = lastTurnUrl;
       saveLink.hidden = false;
+      transcribeTurn(e.audio); // WP9 plug point — never affects detection
     },
     // S3 (WP5): barge-in while the agent speaks → cancel TTS immediately.
     onInterrupt: (info) => {
@@ -93,6 +122,7 @@ async function startMic() {
     label.textContent = "not listening";
     button.hidden = true;
     agentRow.hidden = false;
+    sttRow.hidden = false;
     if (forceNoAec || sons.degraded.aec) {
       errEl.textContent = humanMessage("no-aec");
     }

@@ -78,6 +78,40 @@ Serve over **https or localhost** — microphone access needs a secure context.
   only the demo, not the module. iOS Safari: mic requires a user gesture; AEC
   quality unverified — mobile support out of scope for v1.
 
+## Adding transcription (WP9 plug point)
+
+STT lives **strictly outside the real-time loop**: adapters are called only
+with `onTurnEnd` audio (16 kHz mono, incl. the pre-speech pad) and never
+touch detection. The module ships **no** STT engine — you supply the adapter:
+
+```js
+import { createSpeakOrNoSpeak, CloudStubAdapter } from "speak-or-no-speak";
+
+const stt = new CloudStubAdapter({
+  endpoint: "https://your-stt.example/transcribe", // POST, WAV body → {text, confidence}
+  token: "…",                                      // from YOUR config, never hardcoded
+});
+
+const sons = await createSpeakOrNoSpeak({
+  onTurnEnd: (e) => {
+    stt.transcribe(e.audio, { language: "en-US" })
+      .then((t) => console.log("💬", t.text))
+      .catch((err) => console.warn("STT failed (detection unaffected):", err.message));
+  },
+});
+```
+
+- The shipped example: `CloudStubAdapter` (~50 lines, WAV POST + JSON) — the
+  demo wires it with a local stub (`demo/stt-stub-server.py`, dev-only).
+- **Zero-backend option:** the Web Speech API (`SpeechRecognition`) can run
+  in parallel with listening and harvest the final result matching the turn
+  window — Chromium-only, server-backed (not Baseline per MDN), and the audio
+  leaves the machine (privacy caveat). Zero audio plumbing, though — a good
+  prototyping shortcut.
+- The hard rule: **no STT in the real-time path.** An adapter failure must
+  never affect `onSpeechStart`/`onTurnEnd`/`onInterrupt` — wrap at YOUR level
+  (the demo shows the pattern).
+
 ## Agent integration (read this, app authors!)
 
 While your app plays audio (TTS etc.), call `setAgentSpeaking(true)`; call

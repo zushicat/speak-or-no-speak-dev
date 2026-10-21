@@ -18,6 +18,10 @@ export { SpeakError, ERROR_CODES, humanMessage } from "./errors.js";
 /** WP8 (optional): semantic end-of-turn model (8 MB ONNX asset — see README). */
 export { SmartTurnModel } from "./turn-model/smart-turn.js";
 
+/** WP9: STT plug point — the interface + the shipped example adapter. */
+export { SttAdapter } from "./stt/stt-adapter.js";
+export { CloudStubAdapter } from "./stt/cloud-stub-adapter.js";
+
 /** Pure turn state machine + adaptive redemption policy (advanced use / unit testing). */
 export { TurnDetector, redemptionFor } from "./turn/turn-detector.js";
 

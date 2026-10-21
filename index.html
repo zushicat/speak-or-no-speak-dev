@@ -18,6 +18,10 @@
   #dbg { opacity: .45; font-size: 12px; margin-top: 12px; font-family: ui-monospace, monospace; }
   #save { display: inline-block; margin-top: 10px; font-size: 13px; color: #93c5fd; }
   #agentRow { margin-top: 20px; display: flex; gap: 8px; justify-content: center; align-items: center; }
+  #sttRow { display: flex; gap: 10px; justify-content: center; align-items: center; margin-top: 8px; }
+  #log { margin-top: 14px; font-size: 13px; font-family: ui-monospace, monospace; text-align: left;
+         max-height: 10rem; overflow-y: auto; color: #9ca3af; }
+  #log .err { color: #f87171; }
 </style>
 <!-- Pinned CDN runtime libs (D1) — register globals `ort` and `vad`; read only
      inside src/vad/silero-vad-adapter.js. -->
@@ -42,6 +46,11 @@
       <button id="agent">Simulate agent answer</button>
       <button id="agentStop" hidden>Stop agent</button>
     </div>
+    <div id="sttRow" hidden class="row">
+      <label style="font-size:13px"><input type="checkbox" id="transcribe"> transcribe turns</label>
+      <input id="sttEndpoint" value="http://localhost:5175/transcribe" placeholder="STT endpoint URL (POST, WAV body)" size="30">
+    </div>
+    <div id="log"></div>
   </div>
   <script type="module" src="./demo/main.js"></script>
 </body>
