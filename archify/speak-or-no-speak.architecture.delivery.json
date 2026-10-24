@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "0da934d8-8e26-44eb-9438-d4f3b857c7e0",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/karin/_programming/speak-or-no-speak/archify/candidate.json",
+  "output": "/Users/karin/_programming/speak-or-no-speak/archify/speak-or-no-speak.architecture.html",
+  "specification": {
+    "sha256": "7dff7e3e16fe2d7bc2317918f54928b00049e6d782c63c97c1a9d55e1d490c81",
+    "bytes": 8956
+  },
+  "artifact": {
+    "sha256": "cb8af797b6a4708bfaadfe9cd60aeb69c7d3d6d54974580b4d077c8af7feec63",
+    "bytes": 776694
+  }
+}
