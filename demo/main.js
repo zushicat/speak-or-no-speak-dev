@@ -99,7 +99,7 @@ async function startBackground() {
     syncBgVolume();
     await bgAudio.play();
     setBgUi(true);
-    logLine(`🔊 background: ${bgSound.selectedOptions[0]?.textContent ?? src}`);
+    // logLine(`🔊 background: ${bgSound.selectedOptions[0]?.textContent ?? src}`);
   } catch (err) {
     setBgUi(false);
     logLine(`Background sound failed: ${err?.message ?? err}`, true);
@@ -171,7 +171,7 @@ async function startMicrophone() {
         dbg.textContent = `interrupt after ${info.atMs} ms (latency ${info.latencyMs} ms)`;
         logLine(`barge-in after ${info.atMs} ms (latency ${info.latencyMs} ms)`);
       },
-      onLevel: () => {},
+      onLevel: () => { },
       onError: onError,
       debug: false,
     });
