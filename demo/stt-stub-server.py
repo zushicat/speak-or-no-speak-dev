@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Dev-only STT stub endpoint (WP9 verification) — NOT part of the package.
 
+THIS IS JUST A MOCKUP
+
 POST /transcribe with a WAV body → canned JSON transcription with CORS.
 Run: python3 demo/stt-stub-server.py [port]   (default 5175)
 """
+
 import json
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -15,7 +18,9 @@ class Handler(BaseHTTPRequestHandler):
     def _cors(self):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Language")
+        self.send_header(
+            "Access-Control-Allow-Headers", "Content-Type, Authorization, X-Language"
+        )
 
     def do_OPTIONS(self):
         self.send_response(204)
@@ -28,7 +33,9 @@ class Handler(BaseHTTPRequestHandler):
         is_wav = body[:4] == b"RIFF"
         # canned "transcription" — a real backend would run STT here
         payload = {
-            "text": "(stub) turn received" if not is_wav else "(stub) recognized turn audio",
+            "text": (
+                "(stub) turn received" if not is_wav else "(stub) recognized turn audio"
+            ),
             "confidence": 0.9,
             "bytes": length,
             "wav": is_wav,
