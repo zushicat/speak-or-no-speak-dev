@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Speak Or No Speak — demo</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #14161a;
+      color: #eee;
+    }
+
+    .card {
+      text-align: center;
+    }
+
+    #dot {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      background: #f59e0b;
+      transition: background 150ms;
+    }
+
+    body.listening #dot {
+      background: #22c55e;
+    }
+
+    #label {
+      font-size: 28px;
+    }
+
+    button {
+      margin-top: 24px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 0;
+      cursor: pointer;
+    }
+
+    #err {
+      color: #f87171;
+      min-height: 20px;
+      margin-top: 8px;
+      max-width: 24rem;
+    }
+
+    #dbg {
+      opacity: .45;
+      font-size: 12px;
+      margin-top: 12px;
+      font-family: ui-monospace, monospace;
+    }
+
+    #bgRow {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #bgRow label {
+      font-size: 13px;
+    }
+
+    #bgRow input[type="range"] {
+      width: 110px;
+      accent-color: #93c5fd;
+    }
+
+    #bgRow output {
+      display: inline-block;
+      min-width: 3.2em;
+      text-align: right;
+    }
+
+    #sttRow {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    #log {
+      margin-top: 14px;
+      font-size: 13px;
+      font-family: ui-monospace, monospace;
+      text-align: left;
+      max-height: 10rem;
+      overflow-y: auto;
+      color: #9ca3af;
+    }
+
+    #log .err {
+      color: #f87171;
+    }
+  </style>
+  <!-- Pinned CDN runtime libs (D1) — register globals `ort` and `vad`; read only
+     inside src/vad/silero-vad-adapter.js. -->
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.31/dist/bundle.min.js"></script>
+</head>
+
+<body>
+  <div class="card">
+    <div id="dot"></div>
+    <div id="label" aria-live="polite">press start</div>
+    <button id="start" aria-pressed="false">Start microphone</button>
+    <label style="font-size:13px; display:block; margin-top:8px"><input type="checkbox" id="smartTurn"> Smart Turn (+8
+      MB, semantic end-of-turn)</label>
+    <div id="err"></div>
+    <div id="dbg"></div>
+    <div id="bgRow">
+      <select id="bgSound" aria-label="Background sound">
+        <option value="./assets/street-protest.mp3">Street Protest</option>
+        <option value="./assets/crowd.mp3">Crowd</option>
+        <option value="./assets/street-sounds.mp3">Street Sounds</option>
+        <option value="./assets/playground.mp3">Playground</option>
+        <option value="./assets/street-sounds-people-talking.mp3">Street Sounds With People Talking</option>
+      </select>
+      <button id="bgToggle" aria-pressed="false">Start background sound</button>
+      <label for="bgVolume">Volume <output id="bgVolumeValue" for="bgVolume">50 %</output></label>
+      <input id="bgVolume" type="range" min="0" max="100" step="1" value="50">
+    </div>
+    <div id="sttRow" hidden class="row">
+      <label style="font-size:13px"><input type="checkbox" id="transcribe"> transcribe turns</label>
+      <input id="sttEndpoint" value="http://localhost:5175/transcribe" placeholder="STT endpoint URL (POST, WAV body)"
+        size="30">
+    </div>
+    <div id="log"></div>
+  </div>
+  <!-- Version query busts the stale module cache while the dev server sends no
+       Cache-Control header. Bump it when demo/main.js changes. -->
+  <script type="module" src="./main.js?v=3"></script>
+</body>
+
+</html>
