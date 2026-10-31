@@ -12,7 +12,7 @@
       place-items: center;
       min-height: 100vh;
       margin: 0;
-      background: #14161a;
+      background: #9ca3af;
       color: #eee;
     }
 
@@ -46,6 +46,52 @@
       cursor: pointer;
     }
 
+    input[type="checkbox"] {
+      appearance: none;
+      border-radius: 20px;
+      border: 2px solid #555;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+    }
+
+    input[type="checkbox"]:hover {
+      background-color: #949ba6;
+    }
+
+    input[type="checkbox"]:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 3px;
+    }
+
+    /* The small filled circle */
+    input[type="checkbox"]::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #555;
+
+      transform: scale(0);
+      transition: transform 120ms ease-in-out;
+    }
+
+    /* Show the circle when checked */
+    input[type="checkbox"]:checked::before {
+      transform: scale(1);
+    }
+
+    #smartTurnRow {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+    }
+
     #err {
       color: #f87171;
       min-height: 20px;
@@ -71,6 +117,7 @@
 
     #bgRow label {
       font-size: 13px;
+      margin-left: 10px;
     }
 
     #bgRow input[type="range"] {
@@ -84,12 +131,37 @@
       text-align: right;
     }
 
+    #bgRow select {
+      margin-top: 24px;
+      padding: 9px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 0;
+      cursor: pointer;
+      background: #eee;
+      line-height: 1.1;
+    }
+
     #sttRow {
       display: flex;
       gap: 10px;
       justify-content: center;
       align-items: center;
-      margin-top: 8px;
+      margin-top: 40px;
+    }
+
+    #sttEndpoint {
+      appearance: none;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      width: 300px;
+      height: 40px;
+      cursor: text;
+      display: grid;
+      place-content: center;
+      padding-left: 5px;
+      background-color: #eee;
+      margin-left: 17px;
     }
 
     #log {
@@ -117,8 +189,14 @@
     <div id="dot"></div>
     <div id="label" aria-live="polite">press start</div>
     <button id="start" aria-pressed="false">Start microphone</button>
-    <label style="font-size:13px; display:block; margin-top:8px"><input type="checkbox" id="smartTurn"> Smart Turn (+8
-      MB, semantic end-of-turn)</label>
+
+    <div id="smartTurnRow" class="row">
+      <input type="checkbox" id="smartTurn">
+      <label style="font-size:13px;">
+        Smart Turn (+8 MB, semantic end-of-turn)
+      </label>
+    </div>
+
     <div id="err"></div>
     <div id="dbg"></div>
     <div id="bgRow">
@@ -129,12 +207,16 @@
         <option value="./assets/playground.mp3">Playground</option>
         <option value="./assets/street-sounds-people-talking.mp3">Street Sounds With People Talking</option>
       </select>
-      <button id="bgToggle" aria-pressed="false">Start background sound</button>
-      <label for="bgVolume">Volume <output id="bgVolumeValue" for="bgVolume">50 %</output></label>
-      <input id="bgVolume" type="range" min="0" max="100" step="1" value="50">
+
+      <div>
+        <button id="bgToggle" aria-pressed="false">Start background sound</button>
+        <label for="bgVolume">Volume <output id="bgVolumeValue" for="bgVolume">50 %</output></label>
+        <input id="bgVolume" type="range" min="0" max="100" step="1" value="50">
+      </div>
     </div>
     <div id="sttRow" hidden class="row">
-      <label style="font-size:13px"><input type="checkbox" id="transcribe"> transcribe turns</label>
+      <input type="checkbox" id="transcribe">
+      <label style="font-size:13px">transcribe turns</label>
       <input id="sttEndpoint" value="http://localhost:5175/transcribe" placeholder="STT endpoint URL (POST, WAV body)"
         size="30">
     </div>
