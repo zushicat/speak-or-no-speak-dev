@@ -8,7 +8,15 @@ Detects: speech start · turn end · barge-in interruption.
     npm run start:serve  # alternative via npx serve
 
 Open http://localhost:5173 (a secure context is required for microphone access —
-`file://` will NOT work). Click **Start microphone** and allow the prompt.
+`file://` will NOT work). Click **Start microphone** and allow the prompt; the
+same button becomes **Stop microphone** and releases the mic again.
+
+The **Background sound** row plays one of the ambient MP3s from `assets/` on a
+loop, with its own start/stop button and a live volume slider (default 50 %). It
+is independent of the mic and is deliberately *not* agent output, so it reaches the
+detector as ambient noise — useful for testing noise robustness. Because it is
+`<audio>` playback in the same tab, AEC may partially cancel it; append
+`?noaec=1` to compare the no-AEC path.
 
 ## Requirements
 
@@ -23,6 +31,7 @@ static server, runtime libraries pinned via CDN `<script>` tags.
 
     index.html        demo page (green/orange listening indicator)
     demo/             demo wiring — UI mapping only, no detection logic
+    assets/           demo background-noise MP3s (see assets/sources.md)
     src/              the module (facade, VAD adapters, turn state machine)
     test/unit/        node --test suite · test/util/ + test/harness (later WPs)
     plans/            implementation plan & work packages (not published)
@@ -77,10 +86,9 @@ Serve over **https or localhost** — microphone access needs a secure context.
 - **Energy fallback** (`degraded.engine = "energy"`): noise-blind by design
   (RMS vs adaptive floor) — a degraded mode, always flagged, never silent.
 - **Safari**: AudioWorklet module load can hang in some versions → the
-  adapter auto-falls back to `ScriptProcessor` (verified path); TTS
-  `speechSynthesis` quirks (async voice loading, `pause()` flakiness) affect
-  only the demo, not the module. iOS Safari: mic requires a user gesture; AEC
-  quality unverified — mobile support out of scope for v1.
+  adapter auto-falls back to `ScriptProcessor` (verified path). iOS Safari: mic
+  requires a user gesture; AEC quality unverified — mobile support out of scope
+  for v1.
 
 ## Adding transcription (WP9 plug point)
 

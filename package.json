@@ -10,6 +10,7 @@
   "files": [
     "src/",
     "demo/",
+    "assets/",
     "test/harness.html",
     "test/harness-main.js",
     "test/harness/",

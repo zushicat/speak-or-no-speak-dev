@@ -16,8 +16,10 @@
            border-radius: 8px; border: 0; cursor: pointer; }
   #err { color: #f87171; min-height: 20px; margin-top: 8px; max-width: 24rem; }
   #dbg { opacity: .45; font-size: 12px; margin-top: 12px; font-family: ui-monospace, monospace; }
-  #save { display: inline-block; margin-top: 10px; font-size: 13px; color: #93c5fd; }
-  #agentRow { margin-top: 20px; display: flex; gap: 8px; justify-content: center; align-items: center; }
+  #bgRow { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; }
+  #bgRow label { font-size: 13px; }
+  #bgRow input[type="range"] { width: 110px; accent-color: #93c5fd; }
+  #bgRow output { display: inline-block; min-width: 3.2em; text-align: right; }
   #sttRow { display: flex; gap: 10px; justify-content: center; align-items: center; margin-top: 8px; }
   #log { margin-top: 14px; font-size: 13px; font-family: ui-monospace, monospace; text-align: left;
          max-height: 10rem; overflow-y: auto; color: #9ca3af; }
@@ -32,19 +34,21 @@
   <div class="card">
     <div id="dot"></div>
     <div id="label" aria-live="polite">press start</div>
-    <button id="start">Start microphone</button>
+    <button id="start" aria-pressed="false">Start microphone</button>
     <label style="font-size:13px; display:block; margin-top:8px"><input type="checkbox" id="smartTurn"> Smart Turn (+8 MB, semantic end-of-turn)</label>
     <div id="err"></div>
     <div id="dbg"></div>
-    <a id="save" hidden download="turn.wav">Save last turn (.wav)</a>
-    <div id="agentRow" hidden>
-      <select id="ttsVol" aria-label="TTS volume">
-        <option value="0.3">30 %</option>
-        <option value="0.5" selected>50 %</option>
-        <option value="1">100 %</option>
+    <div id="bgRow">
+      <select id="bgSound" aria-label="Background sound">
+        <option value="./assets/street-protest.mp3">Street Protest</option>
+        <option value="./assets/crowd.mp3">Crowd</option>
+        <option value="./assets/street-sounds.mp3">Street Sounds</option>
+        <option value="./assets/playground.mp3">Playground</option>
+        <option value="./assets/street-sounds-people-talking.mp3">Street Sounds With People Talking</option>
       </select>
-      <button id="agent">Simulate agent answer</button>
-      <button id="agentStop" hidden>Stop agent</button>
+      <button id="bgToggle" aria-pressed="false">Start background sound</button>
+      <label for="bgVolume">Volume <output id="bgVolumeValue" for="bgVolume">50 %</output></label>
+      <input id="bgVolume" type="range" min="0" max="100" step="1" value="50">
     </div>
     <div id="sttRow" hidden class="row">
       <label style="font-size:13px"><input type="checkbox" id="transcribe"> transcribe turns</label>
@@ -52,6 +56,8 @@
     </div>
     <div id="log"></div>
   </div>
-  <script type="module" src="./demo/main.js"></script>
+  <!-- Version query busts the stale module cache while the dev server sends no
+       Cache-Control header. Bump it when demo/main.js changes. -->
+  <script type="module" src="./demo/main.js?v=3"></script>
 </body>
 </html>
