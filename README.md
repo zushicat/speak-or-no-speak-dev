@@ -7,11 +7,11 @@ Detects: speech start · turn end · barge-in interruption.
     npm start            # python3 http.server on http://localhost:5173
     npm run start:serve  # alternative via npx serve
 
-Open http://localhost:5173 (a secure context is required for microphone access —
-`file://` will NOT work). Click **Start microphone** and allow the prompt; the
-same button becomes **Stop microphone** and releases the mic again.
+Open http://localhost:5173/demo/ (a secure context is required for microphone
+access — `file://` will NOT work). Click **Start microphone** and allow the
+prompt; the same button becomes **Stop microphone** and releases the mic again.
 
-The **Background sound** row plays one of the ambient MP3s from `assets/` on a
+The **Background sound** row plays one of the ambient MP3s from `demo/assets/` on a
 loop, with its own start/stop button and a live volume slider (default 50 %). It
 is independent of the mic and is deliberately *not* agent output, so it reaches the
 detector as ambient noise — useful for testing noise robustness. Because it is
@@ -29,12 +29,12 @@ detector as ambient noise — useful for testing noise robustness. Because it is
 No bundler, no TypeScript compile — plain ES modules loaded straight from the
 static server, runtime libraries pinned via CDN `<script>` tags.
 
-    index.html        demo page (green/orange listening indicator)
-    demo/             demo wiring — UI mapping only, no detection logic
-    assets/           demo background-noise MP3s (see assets/sources.md)
-    src/              the module (facade, VAD adapters, turn state machine)
-    test/unit/        node --test suite · test/util/ + test/harness (later WPs)
-    plans/            implementation plan & work packages (not published)
+    demo/index.html    demo page (green/orange listening indicator)
+    demo/main.js       demo wiring — UI mapping only, no detection logic
+    demo/assets/       background-noise MP3s (see demo/assets/sources.md)
+    src/               the module (facade, VAD adapters, turn state machine)
+    test/unit/         node --test suite · test/util/ + test/harness (later WPs)
+    plans/             implementation plan & work packages (not published)
 
 ## Status
 
