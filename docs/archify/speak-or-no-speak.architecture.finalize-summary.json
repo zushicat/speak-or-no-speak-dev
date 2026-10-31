@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/candidate.json",
+    "sha256": "c9279aa0abed6fa4b23377390ff3358ed973c1162a13873784d9f791335ca50d",
+    "bytes": 10289
+  },
+  "artifact": {
+    "path": "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/speak-or-no-speak.architecture.html",
+    "sha256": "45d5adb0429996045c148779933c9a6a7560d5556b9b3af4036b4eaeb13e1c23",
+    "bytes": 776783
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "fail"
+  },
+  "failedStage": "browser-check",
+  "diagnostics": [
+    {
+      "code": "viewer/browser-check-runtime",
+      "severity": "error",
+      "message": "browser-check could not complete its Chrome inspection.",
+      "subject": {
+        "artifact": "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/speak-or-no-speak.architecture.html"
+      },
+      "evidence": {
+        "reason": "Chrome DevTools read pipe failed: stream ended\nChrome process: still running.\nChrome stderr:\nshpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/6e43855e-e910-4906-8402-9d334f18c422.dmp: Operation not permitted (1)\n[1031/084607.728211:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16d7e8000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.735481:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/f2c4e7d6-bde4-4d87-8c31-f0f9b4fe2479.dmp: Operation not permitted (1)\nFailed to initialize sandbox.[1031/084607.782804:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16cf98000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.790935:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/5e0effba-00ca-46a4-9cab-c36cc576472e.dmp: Operation not permitted (1)\nFailed to initialize sandbox.[1031/084607.951122:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16dcf4000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.958972:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/c36cc805-2e02-4cca-a561-6be514c0aa92.dmp: Operation not permitted (1)\nFailed to initialize sandbox.Failed to initialize sandbox.[1031/084607.973582:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16ce2c000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.981535:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/80d3fe11-64bc-4d93-b254-b8050cefa7bf.dmp: Operation not permitted (1)\n[1031/084607.981762:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16b89c000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.988656:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/b3786381-6226-4693-b373-99db6f223372.dmp: Operation not permitted (1)\nTrying to load the allocator multiple times. This is *not* supported.\n[79470:320221672:1031/084608.040224:ERROR:content/browser/gpu/gpu_process_host.cc:1044] GPU process exited unexpectedly: exit_code=6\n[79470:320221672:1031/084608.041908:ERROR:content/browser/network_service_instance_impl.cc:652] Network service crashed or was terminated, restarting service.\nFailed to initialize sandbox.[1031/084608.045879:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f650000, 0x8000): (os/kern) invalid address (1)\nFailed to initialize sandbox.sandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.sandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.Failed to initialize sandbox.[1031/084608.053526:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/037733a1-498c-48fd-a852-0445f24b8e2e.dmp: Operation not permitted (1)\n[1031/084608.053690:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16d810000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.061281:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/61f62555-2ec4-4f79-8597-8ac7ff92a640.dmp: Operation not permitted (1)\n[1031/084608.061432:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f77c000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.068685:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/a02bd5b1-1a7f-4a72-8b23-94c32748097a.dmp: Operation not permitted (1)\n[1031/084608.068923:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16bb48000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.076593:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/00f877e5-4e13-4e96-9576-46d504adc1da.dmp: Operation not permitted (1)\n[1031/084608.076829:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16b998000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.084855:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/4e11bace-a1de-4440-ac9c-40d1577a23bb.dmp: Operation not permitted (1)\nFailed to initialize sandbox.[1031/084608.086886:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16bc50000, 0x8000): (os/kern) invalid address (1)\n[79470:320221672:1031/084608.091404:ERROR:content/browser/network_service_instance_impl.cc:652] Network service crashed or was terminated, restarting service.\n[79470:320221672:1031/084608.093027:ERROR:content/browser/gpu/gpu_process_host.cc:1044] GPU process exited unexpectedly: exit_code=6\n[1031/084608.094266:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/4a0bed0d-8324-4c0d-bd24-659b701350b5.dmp: Operation not permitted (1)\nsandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.[1031/084608.100199:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16dc88000, 0x8000): (os/kern) invalid address (1)\nsandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.Failed to initialize sandbox.[1031/084608.108262:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/7024931a-9cac-4253-8dbe-e4158e73b964.dmp: Operation not permitted (1)\n[1031/084608.108512:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f0e4000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.116619:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/e6098f88-89e4-4943-a36f-6c13687b7c78.dmp: Operation not permitted (1)\n[1031/084608.116873:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16d7d8000, 0x8000): (os/kern) invalid address (1)\n[79470:320221672:1031/084608.118029:ERROR:content/browser/network_service_instance_impl.cc:652] Network service crashed or was terminated, restarting service.\n[79470:320221672:1031/084608.118878:ERROR:content/browser/gpu/gpu_process_host.cc:1044] GPU process exited unexpectedly: exit_code=6\n[79470:320221672:1031/084608.118887:FATAL:content/browser/gpu/gpu_data_manager_impl_private.cc:389] GPU process isn't usable. Goodbye.\n[1031/084608.124753:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/c348cbb2-178e-49ad-a045-49a1f7f66456.dmp: Operation not permitted (1)\n[1031/084608.125261:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f884000, 0x8000): (os/kern) invalid address (1)\nsandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.[1031/084608.322840:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/5b17021c-19d4-4138-ae1d-4792b5040360.dmp: Operation not permitted (1)\n[1031/084608.324130:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f3ac000, 0x8000): (os/kern) invalid address (1)\nChrome transport: Node v26.7.0, libuv 1.52.1, darwin; pid=79470, exitCode=null, signalCode=null.\nChrome read pipe: readable=false, ended=true, destroyed=false, receivedBytes=1328, messages=3, bufferedBytes=0.\nChrome write pipe: writable=true, ended=false, destroyed=false, completedWrites=3, writtenBytes=255, bufferedBytes=0."
+      },
+      "supportedFixes": [
+        "resolve the reported Chrome inspection error, then rerun browser-check"
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/speak-or-no-speak.architecture.finalize.json",
+    "summaryReceipt": "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/speak-or-no-speak.architecture.finalize-summary.json",
+    "browserCheckReceipt": "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/speak-or-no-speak.architecture.browser-check.json"
+  },
+  "update": {
+    "status": "unavailable",
+    "installedVersion": null,
+    "availableVersion": null,
+    "releaseNotes": null,
+    "checkedAt": null,
+    "source": null,
+    "noticeRequired": false,
+    "noticeText": null,
+    "reason": "cache-unavailable"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 980
+}

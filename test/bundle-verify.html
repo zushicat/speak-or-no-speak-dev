@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speak Or No Speak — bundle verify (WP-B2)</title>
+<style>
+  body { font-family: system-ui, sans-serif; display: grid; place-items: center;
+         min-height: 100vh; margin: 0; background: #14161a; color: #eee; }
+  .card { text-align: center; }
+  #dot { width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 16px;
+         background: #f59e0b; transition: background 150ms; }
+  body.listening #dot { background: #22c55e; }
+  #label { font-size: 28px; }
+  #meta { font-size: 13px; color: #93c5fd; margin-top: 6px;
+          font-family: ui-monospace, monospace; }
+  #level { font-size: 12px; opacity: .6; margin-top: 4px;
+           font-family: ui-monospace, monospace; min-height: 16px; }
+  button { margin-top: 16px; padding: 10px 20px; font-size: 16px;
+           border-radius: 8px; border: 0; cursor: pointer; }
+  #agentRow { margin-top: 16px; display: flex; gap: 8px; justify-content: center; }
+  #save { display: inline-block; margin-top: 10px; font-size: 13px; color: #93c5fd; }
+  #err { color: #f87171; min-height: 20px; margin-top: 8px; max-width: 26rem; }
+  #log { margin-top: 14px; font-size: 13px; font-family: ui-monospace, monospace;
+         text-align: left; max-height: 12rem; overflow-y: auto; color: #9ca3af;
+         width: 34rem; max-width: 90vw; }
+  #log .err { color: #f87171; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div id="dot"></div>
+    <div id="label" aria-live="polite">loading bundle…</div>
+    <div id="meta"></div>
+    <div id="level">—</div>
+    <div>
+      <button id="start">Start microphone</button>
+      <button id="stop" hidden>Stop microphone</button>
+    </div>
+    <div id="agentRow" hidden>
+      <button id="agent">Simulate agent answer</button>
+      <button id="agentStop" hidden>Stop agent</button>
+    </div>
+    <a id="save" hidden download="turn.wav">Save last turn (.wav)</a>
+    <div id="err"></div>
+    <div id="log"></div>
+  </div>
+  <!-- WP-B2: the page itself loads NOTHING from src/ — the consumer module
+       below imports only ../build/ (see bundle-verify-main.js for modes). -->
+  <script type="module" src="./bundle-verify-main.js"></script>
+</body>
+</html>

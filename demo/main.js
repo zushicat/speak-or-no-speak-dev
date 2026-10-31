@@ -1,26 +1,40 @@
 /**
- * Demo wiring — UI MAPPING ONLY (WP3/WP4/WP5). Contains NO detection logic:
- * all onset/turn/barge-in decisions live in the facade's TurnDetector; this
- * file maps facade events → DOM and simulates an agent via speechSynthesis.
+ * Demo wiring — UI MAPPING ONLY (WP3/WP4/WP5/WP9). Contains NO detection
+ * logic: all onset/turn/barge-in decisions live in the facade's TurnDetector;
+ * this file maps facade events → DOM, toggles the microphone, and plays an
+ * ambient background track for noise-robustness testing.
  */
 import { createSpeakOrNoSpeak, humanMessage, SmartTurnModel } from "../src/index.js";
-import { encodeWav } from "../src/wav-export.js";
 import { CloudStubAdapter } from "../src/stt/cloud-stub-adapter.js";
 
 const button = document.getElementById("start");
 const label = document.getElementById("label");
 const errEl = document.getElementById("err");
 const dbg = document.getElementById("dbg");
-const saveLink = document.getElementById("save");
-const agentRow = document.getElementById("agentRow");
-const agentButton = document.getElementById("agent");
-const agentStopButton = document.getElementById("agentStop");
-const ttsVol = document.getElementById("ttsVol");
+const smartTurn = document.getElementById("smartTurn");
 const transcribeToggle = document.getElementById("transcribe");
 const sttEndpoint = document.getElementById("sttEndpoint");
 const sttRow = document.getElementById("sttRow");
 const logEl = document.getElementById("log");
-let lastTurnUrl = null;
+const bgSound = document.getElementById("bgSound");
+const bgToggle = document.getElementById("bgToggle");
+const bgVolume = document.getElementById("bgVolume");
+const bgVolumeValue = document.getElementById("bgVolumeValue");
+
+let sons = null;
+let micRunning = false;
+let micBusy = false;
+
+/** Cached across start/stop cycles — the ONNX session loads once. */
+let smartTurnModel = null;
+
+/** One looping media element for the ambient background bed. */
+const bgAudio = new Audio();
+bgAudio.loop = true;
+bgAudio.preload = "auto";
+let bgPlaying = false;
+let bgBusy = false;
+let bgTrack = "";
 
 /** Timestamped event log (WP9 demo: transcription results + errors). */
 function logLine(text, isError = false) {
@@ -45,28 +59,84 @@ function transcribeTurn(audio) {
   }
 }
 
-/** WP5 §5.2: collected interrupt latencies (t_voice → t_event), for the results table. */
-const agentLog = { latenciesMs: [], interrupts: 0 };
-window.__agentLog = agentLog; // tooling handle
+// ---------------------------------------------------------------------------
+// Background sound (ambient noise — deliberately NOT setAgentSpeaking: it is
+// supposed to reach the detector so the demo can be tested under noise).
+// ---------------------------------------------------------------------------
 
-button.addEventListener("click", startMic);
-agentButton.addEventListener("click", simulateAgent);
-agentStopButton.addEventListener("click", stopAgent);
+/** Map the 0–100 slider to the media element's linear 0–1 volume. */
+function syncBgVolume() {
+  const percent = Number(bgVolume.value);
+  bgAudio.volume = percent / 100;
+  bgVolumeValue.textContent = `${percent} %`;
+}
 
-/** Long filler text — takes ~40 s at rate 0.9. */
-const LONG_TEXT = (
-  "The quick brown fox jumps over the lazy dog while the rain in Spain falls mainly on the plain. " +
-  "Nobody expects the Spanish Inquisition on a Tuesday morning in the middle of October. " +
-  "It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness. " +
-  "To be or not to be, that is the question, whether tis nobler in the mind to suffer the slings and arrows of outrageous fortune. " +
-  "The answers are out there, floating in the ether, waiting for someone to ask the right questions. "
-).repeat(3);
+/** Rewind only when metadata is available: setting currentTime at
+ *  readyState HAVE_NOTHING throws in Chromium. */
+function rewindBackground() {
+  if (bgAudio.readyState > 0) bgAudio.currentTime = 0;
+}
 
-let sons = null;
-let agentArmed = false;
+function setBgUi(playing) {
+  bgPlaying = playing;
+  bgToggle.textContent = playing ? "Stop background sound" : "Start background sound";
+  bgToggle.setAttribute("aria-pressed", String(playing));
+}
 
-async function startMic() {
+async function startBackground() {
+  if (bgPlaying || bgBusy) return;
+  const src = bgSound.value;
+  if (!src) return;
+  bgBusy = true;
+  bgToggle.disabled = true;
+  bgSound.disabled = true;
+  try {
+    if (bgTrack !== src) {
+      bgTrack = src;
+      bgAudio.src = src;
+    }
+    rewindBackground();
+    syncBgVolume();
+    await bgAudio.play();
+    setBgUi(true);
+    // logLine(`🔊 background: ${bgSound.selectedOptions[0]?.textContent ?? src}`);
+  } catch (err) {
+    setBgUi(false);
+    logLine(`Background sound failed: ${err?.message ?? err}`, true);
+  } finally {
+    bgBusy = false;
+    bgToggle.disabled = false;
+    bgSound.disabled = false;
+  }
+}
+
+function stopBackground() {
+  bgAudio.pause();
+  rewindBackground();
+  setBgUi(false);
+}
+
+// ---------------------------------------------------------------------------
+// Microphone start/stop toggle
+// ---------------------------------------------------------------------------
+
+async function toggleMicrophone() {
+  if (micBusy) return;
+  if (micRunning) {
+    stopMicrophone();
+    return;
+  }
+  micBusy = true;
   button.disabled = true;
+  try {
+    await startMicrophone();
+  } finally {
+    micBusy = false;
+    button.disabled = false;
+  }
+}
+
+async function startMicrophone() {
   errEl.textContent = "";
   label.textContent = "starting…";
 
@@ -75,102 +145,85 @@ async function startMic() {
   const forceNoAec = new URLSearchParams(location.search).has("noaec");
   const mic = forceNoAec ? { echoCancellation: false } : undefined;
 
-  // WP8: optional semantic end-of-turn model (checkbox; +8 MB asset).
-  const turnModel = document.getElementById("smartTurn")?.checked
-    ? new SmartTurnModel()
-    : undefined;
+  // WP8: optional semantic end-of-turn model (checkbox; +8 MB asset). One
+  // instance is cached so start/stop cycles do not reload the ONNX session.
+  if (smartTurn.checked && !smartTurnModel) smartTurnModel = new SmartTurnModel();
 
-  sons = await createSpeakOrNoSpeak({
-    mic,
-    turnModel,
-    onSpeechStart: () => {
-      document.body.classList.add("listening");
-      label.textContent = agentArmed ? "agent speaking… (interruptable)" : "listening";
-    },
-    onTurnEnd: (e) => {
-      document.body.classList.remove("listening");
-      label.textContent = agentArmed ? "agent speaking… (interruptable)" : "not listening";
-      // turn-finished log line (WP2 behavior spec)
-      dbg.textContent = `turn: ${(e.durationMs / 1000).toFixed(1)} s` +
-        (e.truncated ? " (truncated)" : "") + (e.afterInterrupt ? " (after interrupt)" : "");
-      // WP4: downloadable WAV of the turn — the primary tool for checking
-      // onset clipping / pad length by ear.
-      if (lastTurnUrl) URL.revokeObjectURL(lastTurnUrl);
-      const blob = encodeWav(e.audio, 16000);
-      lastTurnUrl = URL.createObjectURL(blob);
-      saveLink.href = lastTurnUrl;
-      saveLink.hidden = false;
-      transcribeTurn(e.audio); // WP9 plug point — never affects detection
-    },
-    // S3 (WP5): barge-in while the agent speaks → cancel TTS immediately.
-    onInterrupt: (info) => {
-      agentLog.interrupts++;
-      agentLog.latenciesMs.push(info.latencyMs);
-      speechSynthesis.cancel();
-      disarmAgent();
-      dbg.textContent = `interrupt after ${info.atMs} ms (latency ${info.latencyMs} ms)`;
-      console.log(`[sons] INTERRUPT after ${info.atMs} ms armed, latency ${info.latencyMs} ms`);
-    },
-    onLevel: () => {},
-    onError: onError,
-    debug: false,
-  });
-  window.__sons = sons; // debug handle (tooling)
-
+  let instance = null;
   try {
-    await sons.start();
-    label.textContent = "not listening";
-    button.hidden = true;
-    agentRow.hidden = false;
+    instance = await createSpeakOrNoSpeak({
+      mic,
+      turnModel: smartTurn.checked ? smartTurnModel : undefined,
+      onSpeechStart: () => {
+        document.body.classList.add("listening");
+        label.textContent = "listening";
+      },
+      onTurnEnd: (e) => {
+        document.body.classList.remove("listening");
+        label.textContent = "not listening";
+        // turn-finished log line (WP2 behavior spec)
+        dbg.textContent = `turn: ${(e.durationMs / 1000).toFixed(1)} s` +
+          (e.truncated ? " (truncated)" : "") + (e.afterInterrupt ? " (after interrupt)" : "");
+        transcribeTurn(e.audio); // WP9 plug point — never affects detection
+      },
+      // S3 (WP5): kept for completeness; the demo no longer drives TTS.
+      onInterrupt: (info) => {
+        dbg.textContent = `interrupt after ${info.atMs} ms (latency ${info.latencyMs} ms)`;
+        logLine(`barge-in after ${info.atMs} ms (latency ${info.latencyMs} ms)`);
+      },
+      onLevel: () => { },
+      onError: onError,
+      debug: false,
+    });
+    await instance.start();
+    sons = instance;
+    window.__sons = instance; // debug handle (tooling)
+    micRunning = true;
+    button.textContent = "Stop microphone";
+    button.setAttribute("aria-pressed", "true");
+    smartTurn.disabled = true;
     sttRow.hidden = false;
-    if (forceNoAec || sons.degraded.aec) {
+    label.textContent = "not listening";
+    if (forceNoAec || instance.degraded.aec) {
       errEl.textContent = humanMessage("no-aec");
     }
-    if (sons.degraded.engine === "energy") {
+    if (instance.degraded.engine === "energy") {
       errEl.textContent = humanMessage("engine-fallback");
     }
-  } catch {
-    // onError already rendered the message; restore usability for a retry.
-    button.disabled = false;
+  } catch (err) {
+    // onError may already have rendered the message; otherwise show it here.
+    try { instance?.stop(); } catch { /* already torn down */ }
+    sons = null;
+    window.__sons = null;
+    micRunning = false;
+    button.textContent = "Start microphone";
+    button.setAttribute("aria-pressed", "false");
+    smartTurn.disabled = false;
     label.textContent = "press start";
-  }
-}
-
-/** WP5 §5.1: simulate an agent answer through the browser's audio path. */
-function simulateAgent() {
-  if (!sons || agentArmed) return;
-  const utter = new SpeechSynthesisUtterance(LONG_TEXT);
-  utter.volume = parseFloat(ttsVol.value);
-  utter.rate = 0.9;
-  utter.onend = () => {
-    if (agentArmed) {
-      disarmAgent();
-      dbg.textContent = "agent finished (no interrupt)";
+    if (!errEl.textContent) {
+      errEl.textContent = err?.code
+        ? humanMessage(err.code)
+        : `Error: ${err?.message ?? err}`;
     }
-  };
-  speechSynthesis.cancel();
-  speechSynthesis.speak(utter);
-  agentArmed = true;
-  sons.setAgentSpeaking(true);
-  label.textContent = "agent speaking… (interruptable)";
-  agentButton.disabled = true;
-  agentStopButton.hidden = false;
-}
-
-function stopAgent() {
-  speechSynthesis.cancel();
-  if (agentArmed) {
-    disarmAgent();
-    dbg.textContent = "agent stopped manually";
   }
 }
 
-function disarmAgent() {
-  agentArmed = false;
-  sons?.setAgentSpeaking(false);
-  label.textContent = "not listening";
-  agentButton.disabled = false;
-  agentStopButton.hidden = true;
+function stopMicrophone() {
+  try {
+    sons?.stop();
+  } catch (err) {
+    logLine(`stop failed: ${err?.message ?? err}`, true);
+  }
+  sons = null;
+  window.__sons = null;
+  micRunning = false;
+  document.body.classList.remove("listening");
+  button.textContent = "Start microphone";
+  button.setAttribute("aria-pressed", "false");
+  smartTurn.disabled = false;
+  label.textContent = "press start";
+  dbg.textContent = "";
+  errEl.textContent = "";
 }
 
 function onError(err) {
@@ -178,3 +231,34 @@ function onError(err) {
   // eslint-disable-next-line no-console
   console.error("[sons] onError:", err);
 }
+
+// ---------------------------------------------------------------------------
+// Wiring
+// ---------------------------------------------------------------------------
+
+button.addEventListener("click", toggleMicrophone);
+
+bgToggle.addEventListener("click", () => {
+  if (bgPlaying) stopBackground();
+  else startBackground();
+});
+
+bgSound.addEventListener("change", () => {
+  if (!bgPlaying) return;
+  stopBackground();
+  startBackground();
+});
+
+bgVolume.addEventListener("input", syncBgVolume);
+syncBgVolume();
+
+bgAudio.addEventListener("error", () => {
+  setBgUi(false);
+  logLine(`Background sound failed to load: ${bgAudio.error?.message ?? "unknown media error"}`, true);
+});
+
+// Release the mic and stop audio when the page is left (reload / bfcache).
+window.addEventListener("pagehide", () => {
+  stopMicrophone();
+  stopBackground();
+});
