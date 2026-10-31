@@ -21,6 +21,7 @@
   "scripts": {
     "start": "python3 -m http.server 5173",
     "start:serve": "npx --yes serve -l 5173 .",
+    "build:bundle": "node scripts/build-bundle.mjs",
     "test": "node --test"
   },
   "license": "MIT",
@@ -31,5 +32,8 @@
     "speech",
     "browser",
     "silero"
-  ]
+  ],
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
 }

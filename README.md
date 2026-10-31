@@ -33,6 +33,10 @@ Work in progress — see plans/initial/plan-initial.md.
 
 ## Embedding (WP7 — two modes, same API)
 
+> Prebuilt single-file distribution (no npm install, no bundler):
+> [`build/speak-or-no-speak.esm.js`](build/speak-or-no-speak.esm.js) (+ IIFE
+> variant) — see [README-BUNDLE.md](README-BUNDLE.md).
+
 ### Mode 1 · zero-build page (CDN script tags)
 
 ```html
