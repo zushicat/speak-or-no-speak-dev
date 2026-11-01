@@ -9,7 +9,7 @@ and the work packages that produced the code.
 ## 17.1 The initial problem analysis
 
 The project started with a problem analysis
-([`plans/initial/problem-analysis-initial.md`](../plans/initial/problem-analysis-initial.md))
+([`appendix-b-problem-analysis-initial.md`](appendix-b-problem-analysis-initial.md))
 that decomposed "speak or no speak" into the four sub-problems used throughout
 this documentation — **S1** (speech onset, ≤ ~300 ms latency), **S2** (turn
 end / endpointing, the hard one), **S3** (barge-in while the agent answers,
@@ -72,8 +72,7 @@ real-time loop.
 
 ## 17.4 Work packages WP0–WP9
 
-The implementation proceeded in work packages
-([`plans/initial/work-packages/`](../plans/initial/work-packages)):
+The implementation proceeded in work packages:
 
 | WP | Delivered | Notable decisions |
 |---|---|---|
@@ -91,17 +90,7 @@ The implementation proceeded in work packages
 Plus **WP-B1** (rev-2): the single-file bundle
 ([Chapter 16](16-build-test-publish.md)).
 
-## 17.5 Revision history
-
-| Revision | Theme | What it added |
-|---|---|---|
-| initial | problem analysis & plan | method analysis, work packages |
-| rev-2 | the build bundle | `build/` artifacts, `README-BUNDLE.md`, bundle verification (WP-B1…B4) |
-| rev-3 | demo usability | persistent mic start/stop toggle, background-sound row with the Pixabay ambient MP3s (replacing the "simulate agent answer" TTS section) |
-| rev-4 | documentation | this documentation set, structured by
-  [`plans/rev-4/plan-rev-4-toc.md`](../plans/rev-4/plan-rev-4-toc.md) |
-
-## 17.6 References and further reading
+## 17.5 References and further reading
 
 - Silero VAD — <https://github.com/snakers4/silero-vad> (MIT, ~2 MB, < 1 ms per 30 ms chunk on one CPU thread)
 - `@ricky0123/vad` (browser VAD on ONNX Runtime Web) — <https://github.com/ricky0123/vad> · docs: <https://docs.vad.ricky0123.com>

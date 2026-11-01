@@ -1,15 +1,6 @@
 # Speak Or No Speak — Documentation
 
-**Speak Or No Speak** is a browser JavaScript module that detects from a
-microphone stream when the user **starts speaking** (S1), **finishes a turn**
-(S2), and **barges in while the agent is answering** (S3) — built on Silero VAD
-+ adaptive endpointing + browser echo cancellation. The demo runs at
-<http://localhost:5173/demo/>.
-
-This is the documentation index. The structure follows
-[`plans/rev-4/plan-rev-4-toc.md`](../plans/rev-4/plan-rev-4-toc.md); all
-chapters below exist as individual markdown pages in this directory.
-
+**Speak Or No Speak** is a browser JavaScript module that detects from a microphone stream when the user **starts speaking** , **finishes a turn**, and **barges in while the agent is answering** — built on Silero VAD + adaptive endpointing + browser echo cancellation. 
 ---
 
 ## How to read the documentation
@@ -60,21 +51,6 @@ chapters below exist as individual markdown pages in this directory.
 ### Appendix
 
 - **[Appendix A — Glossary](appendix-a-glossary.md)** — the vocabulary used throughout
+- **[Appendix B — Initial Problem Analysis](appendix-b-problem-analysis-initial.md)** — Initial analysis of what a VAD entails
 
-## Coverage map — where the existing material lands
 
-| Existing source | Covered in chapters |
-|---|---|
-| [`README.md`](../README.md) (run demo, layout, embedding modes, STT, agent integration, AEC scope, limitations) | 1, 2, 3, 4, 5, 6, 13, 15 |
-| [`README-advanced.md`](../README-advanced.md) (main-thread budget, worker recipe, publishing, offline/CDN) | 8, 11, 15, 16 |
-| [`README-BUNDLE.md`](../README-BUNDLE.md) (bundle quick starts, API/thresholds/events/errors/exports, bundler integration, Smart Turn, degradation) | 4, 5, 6, 12, 13, 14, 15, 16 |
-| [`plans/initial/problem-analysis-initial.md`](../plans/initial/problem-analysis-initial.md) (method comparison, recommended architecture) | 1, 7, 8, 17 |
-| [`plans/initial/` work packages + `wp8-decision.md`](../plans/initial/wp8-decision.md) | 9, 10, 12, 17 |
-| [`src/` sources (module doc comments)](../src/index.js) | 5, 7, 9, 10, 12, 13 |
-| [`demo/` (index.html, main.js, stt-stub-server.py, assets)](../demo/index.html) | 3, 9 |
-| [`docs/archify/speak-or-no-speak.architecture.html`](archify/speak-or-no-speak.architecture.html) (explorable architecture webapp, no server needed) | 8 |
-| [`plans/rev-4/assets/speak-or-no-speak-browser-turn-detection.png`](../plans/rev-4/assets/speak-or-no-speak-browser-turn-detection.png) (architecture screenshot) | 8 |
-
----
-
-*Documentation rev-4 · structure per [`plans/rev-4/plan-rev-4-toc.md`](../plans/rev-4/plan-rev-4-toc.md) · project: [`README.md`](../README.md)*

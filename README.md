@@ -4,3 +4,11 @@
 - Read the [documentation](/Users/karin/_programming/speak-or-no-speak/docs/README.md)
     - [Read here](/Users/karin/_programming/speak-or-no-speak/docs/03-demo.md) how to start the [demo](/Users/karin/_programming/speak-or-no-speak/demo)
 - [Inspect the architecture](/Users/karin/_programming/speak-or-no-speak/docs/archify/speak-or-no-speak.architecture.html)
+
+## Demo
+Check out the running demo: [https://zushicat.github.io/speak-or-no-speak-dev/](https://zushicat.github.io/speak-or-no-speak-dev/)
+![Demo Screenshot](./docs/assets/demo.png)
+
+#
+## Architecture
+![Architecture Screenshot](./docs/assets/architecture.png)
