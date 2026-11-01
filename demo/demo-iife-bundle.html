@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Speak Or No Speak — demo (prebuilt IIFE bundle · docs mode 3)</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #9ca3af;
+      color: #eee;
+    }
+
+    .card {
+      text-align: center;
+    }
+
+    #dot {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      background: #f59e0b;
+      transition: background 150ms;
+    }
+
+    body.listening #dot {
+      background: #22c55e;
+    }
+
+    #label {
+      font-size: 28px;
+    }
+
+    #meta {
+      font-size: 13px;
+      color: #93c5fd;
+      margin-top: 6px;
+      font-family: ui-monospace, monospace;
+    }
+
+    button {
+      margin-top: 24px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 0;
+      cursor: pointer;
+    }
+
+    input[type="checkbox"] {
+      appearance: none;
+      border-radius: 20px;
+      border: 2px solid #555;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+    }
+
+    input[type="checkbox"]:hover {
+      background-color: #949ba6;
+    }
+
+    input[type="checkbox"]:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 3px;
+    }
+
+    /* The small filled circle */
+    input[type="checkbox"]::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #555;
+
+      transform: scale(0);
+      transition: transform 120ms ease-in-out;
+    }
+
+    /* Show the circle when checked */
+    input[type="checkbox"]:checked::before {
+      transform: scale(1);
+    }
+
+    #smartTurnRow {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #err {
+      color: #f87171;
+      min-height: 20px;
+      margin-top: 8px;
+      max-width: 24rem;
+    }
+
+    #dbg {
+      opacity: .45;
+      font-size: 12px;
+      margin-top: 12px;
+      font-family: ui-monospace, monospace;
+    }
+
+    #bgRow {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #bgRow label {
+      font-size: 13px;
+      margin-left: 10px;
+    }
+
+    #bgRow input[type="range"] {
+      width: 110px;
+      accent-color: #93c5fd;
+    }
+
+    #bgRow output {
+      display: inline-block;
+      min-width: 3.2em;
+      text-align: right;
+    }
+
+    #bgRow select {
+      margin-top: 24px;
+      padding: 9px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 0;
+      cursor: pointer;
+      background: #eee;
+      line-height: 1.1;
+    }
+
+    #sttRow {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+      margin-top: 40px;
+    }
+
+    #sttEndpoint {
+      appearance: none;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      width: 300px;
+      height: 40px;
+      cursor: text;
+      display: grid;
+      place-content: center;
+      padding-left: 5px;
+      background-color: #eee;
+      margin-left: 17px;
+    }
+
+    #log {
+      margin-top: 14px;
+      font-size: 13px;
+      font-family: ui-monospace, monospace;
+      text-align: left;
+      max-height: 10rem;
+      overflow-y: auto;
+      color: #9ca3af;
+    }
+
+    #log .err {
+      color: #f87171;
+    }
+  </style>
+  <!-- Pinned CDN runtime libs (docs §4.4) — register the globals `ort` and
+       `vad`, read by the Silero engine adapter at start() time. -->
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.31/dist/bundle.min.js"></script>
+  <!-- The prebuilt IIFE bundle: a classic <script>, no modules — it defines
+       the global window.SpeakOrNoSpeak (docs §4.4). Blocking scripts in <head>
+       guarantee it is loaded before the inline script in <body> runs. -->
+  <script src="../build/speak-or-no-speak.iife.js"></script>
+</head>
+
+<body>
+  <div class="card">
+    <div id="dot"></div>
+    <div id="label" aria-live="polite">press start</div>
+    <div id="meta"></div>
+    <button id="start" aria-pressed="false">Start microphone</button>
+
+    <div id="smartTurnRow" class="row">
+      <input type="checkbox" id="smartTurn">
+      <label style="font-size:13px;">
+        Smart Turn (+8 MB, semantic end-of-turn)
+      </label>
+    </div>
+
+    <div id="err"></div>
+    <div id="dbg"></div>
+    <div id="bgRow">
+      <select id="bgSound" aria-label="Background sound">
+        <option value="./assets/street-protest.mp3">Street Protest</option>
+        <option value="./assets/crowd.mp3">Crowd</option>
+        <option value="./assets/street-sounds.mp3">Street Sounds</option>
+        <option value="./assets/playground.mp3">Playground</option>
+        <option value="./assets/street-sounds-people-talking.mp3">Street Sounds With People Talking</option>
+      </select>
+
+      <div>
+        <button id="bgToggle" aria-pressed="false">Start background sound</button>
+        <label for="bgVolume">Volume <output id="bgVolumeValue" for="bgVolume">50 %</output></label>
+        <input id="bgVolume" type="range" min="0" max="100" step="1" value="50">
+      </div>
+    </div>
+    <div id="sttRow" hidden class="row">
+      <input type="checkbox" id="transcribe">
+      <label style="font-size:13px">transcribe turns</label>
+      <input id="sttEndpoint" value="http://localhost:5175/transcribe" placeholder="STT endpoint URL (POST, WAV body)"
+        size="30">
+    </div>
+    <div id="log"></div>
+  </div>
+
+  <!--
+    demo-iife-bundle.html — docs/04-embedding.md §4.4 "Mode 3 — prebuilt IIFE
+    bundle (classic script, no modules)"
+
+    UI and wiring are IDENTICAL to demo/index.html + demo/main.js — same
+    elements, same behavior. The ONLY difference is where the library code
+    comes from: the prebuilt minified bundle ../build/speak-or-no-speak.iife.js,
+    loaded as a classic <script> that defines window.SpeakOrNoSpeak — no
+    type="module", no import statements.
+
+    Run it (secure context required — file:// will not work):
+        npm start        # python3 -m http.server 5173, serves the checkout root
+        open http://localhost:5173/demo/demo-iife-bundle.html
+
+    The src "../build/speak-or-no-speak.iife.js" is relative because this page
+    is served from the checkout (demo/ → ../build/). Copied next to your page
+    it is "./speak-or-no-speak.iife.js" (docs §4.4). Once the GitHub repo
+    (github.com/zushicat/speak-or-no-speak-dev) is public, an absolute URL works
+    as well — GitHub Pages or jsDelivr's GitHub mirror:
+        https://cdn.jsdelivr.net/gh/zushicat/speak-or-no-speak-dev@<tag>/build/speak-or-no-speak.iife.js
+    (hosting options + MIME/CORS facts: plans/rev-5/explain-rev-5.md §5).
+
+    Sibling page: demo-esm-bundle.html (docs §4.3 — <script type="module">).
+    Query param: ?noaec=1 forces echoCancellation off (docs WP5 §5.4).
+  -->
+
+  <!-- The entire consumer code — no modules, the global is the whole API. -->
+  <script>
+    const bundle = window.SpeakOrNoSpeak;
+
+    if (!bundle) {
+      // The bundle <script> failed (404 / wrong server root): render, never throw.
+      document.getElementById("label").textContent = "bundle failed to load";
+      document.getElementById("err").textContent =
+        "window.SpeakOrNoSpeak is missing — the IIFE bundle did not load. Serve " +
+        "the checkout root (npm start → http://localhost:5173/demo/demo-iife-bundle.html) " +
+        "and make sure build/speak-or-no-speak.iife.js exists (npm run build:bundle).";
+    } else {
+      // Same 16 named exports as the ESM bundle / src/index.js — just reached
+      // through the global instead of an import. (demo/main.js imports the
+      // same names from ../src/index.js; here they all come from the bundle,
+      // SmartTurnModel and CloudStubAdapter included.)
+      const { createSpeakOrNoSpeak, humanMessage, SmartTurnModel, CloudStubAdapter } = bundle;
+
+      document.getElementById("meta").textContent =
+        "mode 3 · IIFE · ../build/speak-or-no-speak.iife.js → window.SpeakOrNoSpeak";
+
+      const button = document.getElementById("start");
+      const label = document.getElementById("label");
+      const errEl = document.getElementById("err");
+      const dbg = document.getElementById("dbg");
+      const smartTurn = document.getElementById("smartTurn");
+      const transcribeToggle = document.getElementById("transcribe");
+      const sttEndpoint = document.getElementById("sttEndpoint");
+      const sttRow = document.getElementById("sttRow");
+      const logEl = document.getElementById("log");
+      const bgSound = document.getElementById("bgSound");
+      const bgToggle = document.getElementById("bgToggle");
+      const bgVolume = document.getElementById("bgVolume");
+      const bgVolumeValue = document.getElementById("bgVolumeValue");
+
+      let sons = null;
+      let micRunning = false;
+      let micBusy = false;
+
+      /** Cached across start/stop cycles — the ONNX session loads once. */
+      let smartTurnModel = null;
+
+      /** One looping media element for the ambient background bed. */
+      const bgAudio = new Audio();
+      bgAudio.loop = true;
+      bgAudio.preload = "auto";
+      let bgPlaying = false;
+      let bgBusy = false;
+      let bgTrack = "";
+
+      /** Timestamped event log (WP9 demo: transcription results + errors). */
+      function logLine(text, isError = false) {
+        const line = document.createElement("div");
+        if (isError) line.className = "err";
+        line.textContent = `${new Date().toISOString().slice(11, 23)} ${text}`;
+        logEl.prepend(line);
+        while (logEl.children.length > 20) logEl.lastChild.remove();
+      }
+
+      /** WP9: STT strictly outside the real-time loop — called from onTurnEnd only,
+       *  fire-and-forget with a catch; failures never touch detection events. */
+      function transcribeTurn(audio) {
+        if (!transcribeToggle.checked || !sttEndpoint.value.trim()) return;
+        try {
+          const adapter = new CloudStubAdapter({ endpoint: sttEndpoint.value.trim() });
+          adapter.transcribe(audio)
+            .then((t) => logLine(`💬 "${t.text}"${t.confidence !== undefined ? ` (${(t.confidence * 100).toFixed(0)}%)` : ""}`))
+            .catch((err) => logLine(`STT failed: ${err.message}`, true));
+        } catch (err) {
+          logLine(`STT setup failed: ${err.message}`, true);
+        }
+      }
+
+      // -------------------------------------------------------------------------
+      // Background sound (ambient noise — deliberately NOT setAgentSpeaking: it
+      // is supposed to reach the detector so the demo can be tested under noise).
+      // -------------------------------------------------------------------------
+
+      /** Map the 0–100 slider to the media element's linear 0–1 volume. */
+      function syncBgVolume() {
+        const percent = Number(bgVolume.value);
+        bgAudio.volume = percent / 100;
+        bgVolumeValue.textContent = `${percent} %`;
+      }
+
+      /** Rewind only when metadata is available: setting currentTime at
+       *  readyState HAVE_NOTHING throws in Chromium. */
+      function rewindBackground() {
+        if (bgAudio.readyState > 0) bgAudio.currentTime = 0;
+      }
+
+      function setBgUi(playing) {
+        bgPlaying = playing;
+        bgToggle.textContent = playing ? "Stop background sound" : "Start background sound";
+        bgToggle.setAttribute("aria-pressed", String(playing));
+      }
+
+      async function startBackground() {
+        if (bgPlaying || bgBusy) return;
+        const src = bgSound.value;
+        if (!src) return;
+        bgBusy = true;
+        bgToggle.disabled = true;
+        bgSound.disabled = true;
+        try {
+          if (bgTrack !== src) {
+            bgTrack = src;
+            bgAudio.src = src;
+          }
+          rewindBackground();
+          syncBgVolume();
+          await bgAudio.play();
+          setBgUi(true);
+        } catch (err) {
+          setBgUi(false);
+          logLine(`Background sound failed: ${err?.message ?? err}`, true);
+        } finally {
+          bgBusy = false;
+          bgToggle.disabled = false;
+          bgSound.disabled = false;
+        }
+      }
+
+      function stopBackground() {
+        bgAudio.pause();
+        rewindBackground();
+        setBgUi(false);
+      }
+
+      // -------------------------------------------------------------------------
+      // Microphone start/stop toggle
+      // -------------------------------------------------------------------------
+
+      async function toggleMicrophone() {
+        if (micBusy) return;
+        if (micRunning) {
+          stopMicrophone();
+          return;
+        }
+        micBusy = true;
+        button.disabled = true;
+        try {
+          await startMicrophone();
+        } finally {
+          micBusy = false;
+          button.disabled = false;
+        }
+      }
+
+      async function startMicrophone() {
+        errEl.textContent = "";
+        label.textContent = "starting…";
+
+        // WP5 §5.4: `?noaec=1` forces echoCancellation off to exercise the
+        // no-AEC fallback branch on any machine.
+        const forceNoAec = new URLSearchParams(location.search).has("noaec");
+        const mic = forceNoAec ? { echoCancellation: false } : undefined;
+
+        // WP8: optional semantic end-of-turn model (checkbox; +8 MB asset). One
+        // instance is cached so start/stop cycles do not reload the ONNX session.
+        if (smartTurn.checked && !smartTurnModel) smartTurnModel = new SmartTurnModel();
+
+        let instance = null;
+        try {
+          instance = await createSpeakOrNoSpeak({
+            mic,
+            turnModel: smartTurn.checked ? smartTurnModel : undefined,
+            onSpeechStart: () => {
+              document.body.classList.add("listening");
+              label.textContent = "listening";
+            },
+            onTurnEnd: (e) => {
+              document.body.classList.remove("listening");
+              label.textContent = "not listening";
+              // turn-finished log line (WP2 behavior spec)
+              dbg.textContent = `turn: ${(e.durationMs / 1000).toFixed(1)} s` +
+                (e.truncated ? " (truncated)" : "") + (e.afterInterrupt ? " (after interrupt)" : "");
+              transcribeTurn(e.audio); // WP9 plug point — never affects detection
+            },
+            // S3 (WP5): kept for completeness; the demo no longer drives TTS.
+            onInterrupt: (info) => {
+              dbg.textContent = `interrupt after ${info.atMs} ms (latency ${info.latencyMs} ms)`;
+              logLine(`barge-in after ${info.atMs} ms (latency ${info.latencyMs} ms)`);
+            },
+            onLevel: () => { },
+            onError: onError,
+            debug: false,
+          });
+          await instance.start();
+          sons = instance;
+          window.__sons = instance; // debug handle (tooling)
+          micRunning = true;
+          button.textContent = "Stop microphone";
+          button.setAttribute("aria-pressed", "true");
+          smartTurn.disabled = true;
+          sttRow.hidden = false;
+          label.textContent = "not listening";
+          if (forceNoAec || instance.degraded.aec) {
+            errEl.textContent = humanMessage("no-aec");
+          }
+          if (instance.degraded.engine === "energy") {
+            errEl.textContent = humanMessage("engine-fallback");
+          }
+        } catch (err) {
+          // onError may already have rendered the message; otherwise show it here.
+          try { instance?.stop(); } catch { /* already torn down */ }
+          sons = null;
+          window.__sons = null;
+          micRunning = false;
+          button.textContent = "Start microphone";
+          button.setAttribute("aria-pressed", "false");
+          smartTurn.disabled = false;
+          label.textContent = "press start";
+          if (!errEl.textContent) {
+            errEl.textContent = err?.code
+              ? humanMessage(err.code)
+              : `Error: ${err?.message ?? err}`;
+          }
+        }
+      }
+
+      function stopMicrophone() {
+        try {
+          sons?.stop();
+        } catch (err) {
+          logLine(`stop failed: ${err?.message ?? err}`, true);
+        }
+        sons = null;
+        window.__sons = null;
+        micRunning = false;
+        document.body.classList.remove("listening");
+        button.textContent = "Start microphone";
+        button.setAttribute("aria-pressed", "false");
+        smartTurn.disabled = false;
+        label.textContent = "press start";
+        dbg.textContent = "";
+        errEl.textContent = "";
+      }
+
+      function onError(err) {
+        errEl.textContent = humanMessage(err.code) ?? `Error (${err.code}): ${err.message}`;
+        // eslint-disable-next-line no-console
+        console.error("[sons] onError:", err);
+      }
+
+      // -------------------------------------------------------------------------
+      // Wiring
+      // -------------------------------------------------------------------------
+
+      button.addEventListener("click", toggleMicrophone);
+
+      bgToggle.addEventListener("click", () => {
+        if (bgPlaying) stopBackground();
+        else startBackground();
+      });
+
+      bgSound.addEventListener("change", () => {
+        if (!bgPlaying) return;
+        stopBackground();
+        startBackground();
+      });
+
+      bgVolume.addEventListener("input", syncBgVolume);
+      syncBgVolume();
+
+      bgAudio.addEventListener("error", () => {
+        setBgUi(false);
+        logLine(`Background sound failed to load: ${bgAudio.error?.message ?? "unknown media error"}`, true);
+      });
+
+      // Release the mic and stop audio when the page is left (reload / bfcache).
+      window.addEventListener("pagehide", () => {
+        stopMicrophone();
+        stopBackground();
+      });
+    }
+  </script>
+</body>
+
+</html>

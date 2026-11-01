@@ -173,6 +173,20 @@ header. Bump it when `demo/main.js` changes.)
 5. **Distance:** step 2 m away from the mic (scenario s9 in the calibration
    set, [§16.5](16-build-test-publish.md#165-the-replay-harness-and-calibration-recordings)).
 
+**Bundle variants of this demo:** the exact same UI and wiring also ships as
+two single-file pages that load **only the prebuilt bundle** instead of
+[`src/`](../src/index.js) —
+[`demo/demo-esm-bundle.html`](../demo/demo-esm-bundle.html) (ESM import,
+[§4.3](04-embedding.md#43-mode-2--prebuilt-esm-bundle)) and
+[`demo/demo-iife-bundle.html`](../demo/demo-iife-bundle.html) (classic script +
+`window.SpeakOrNoSpeak` global,
+[§4.4](04-embedding.md#44-mode-3--prebuilt-iife-bundle-classic-script-no-modules)).
+Serve the checkout (`npm start`) and open
+`http://localhost:5173/demo/demo-esm-bundle.html` or
+`http://localhost:5173/demo/demo-iife-bundle.html` — everything in this chapter
+(page anatomy, the `?noaec=1` parameter, suggested experiments) applies to both
+unchanged.
+
 ---
 
 *Prev: [Chapter 2 — Getting started](02-getting-started.md) · Next: [Chapter 4 — Embedding](04-embedding.md)*
