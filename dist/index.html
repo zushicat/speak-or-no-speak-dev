@@ -149,28 +149,6 @@
       line-height: 1.1;
     }
 
-    #sttRow {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      align-items: center;
-      margin-top: 40px;
-    }
-
-    #sttEndpoint {
-      appearance: none;
-      border-radius: 10px;
-      border: 1px solid #ddd;
-      width: 300px;
-      height: 40px;
-      cursor: text;
-      display: grid;
-      place-content: center;
-      padding-left: 5px;
-      background-color: #eee;
-      margin-left: 17px;
-    }
-
     #log {
       margin-top: 14px;
       font-size: 13px;
@@ -226,12 +204,6 @@
         <input id="bgVolume" type="range" min="0" max="100" step="1" value="50">
       </div>
     </div>
-    <div id="sttRow" hidden class="row">
-      <input type="checkbox" id="transcribe">
-      <label style="font-size:13px">transcribe turns</label>
-      <input id="sttEndpoint" value="http://localhost:5175/transcribe" placeholder="STT endpoint URL (POST, WAV body)"
-        size="30">
-    </div>
     <div id="log"></div>
   </div>
 
@@ -240,8 +212,9 @@
     bundle (classic script, no modules)"
 
     UI and wiring are IDENTICAL to demo/index.html + demo/main.js — same
-    elements, same behavior. The ONLY difference is where the library code
-    comes from: the prebuilt minified bundle ../build/speak-or-no-speak.iife.js,
+    elements, same behavior (except the demo's STT row, removed in this
+    copy — no transcription wiring). The ONLY difference is where the library
+    code comes from: the prebuilt minified bundle ../build/speak-or-no-speak.iife.js,
     loaded as a classic <script> that defines window.SpeakOrNoSpeak — no
     type="module", no import statements.
 
@@ -273,11 +246,9 @@
         "the checkout root (npm start → http://localhost:5173/demo/demo-iife-bundle.html) " +
         "and make sure build/speak-or-no-speak.iife.js exists (npm run build:bundle).";
     } else {
-      // Same 16 named exports as the ESM bundle / src/index.js — just reached
-      // through the global instead of an import. (demo/main.js imports the
-      // same names from ../src/index.js; here they all come from the bundle,
-      // SmartTurnModel and CloudStubAdapter included.)
-      const { createSpeakOrNoSpeak, humanMessage, SmartTurnModel, CloudStubAdapter } = bundle;
+      // The named exports this demo still uses — just reached through the
+      // global instead of an import.
+      const { createSpeakOrNoSpeak, humanMessage, SmartTurnModel } = bundle;
 
       document.getElementById("meta").textContent =
         "mode 3 · IIFE · ../build/speak-or-no-speak.iife.js → window.SpeakOrNoSpeak";
@@ -287,9 +258,6 @@
       const errEl = document.getElementById("err");
       const dbg = document.getElementById("dbg");
       const smartTurn = document.getElementById("smartTurn");
-      const transcribeToggle = document.getElementById("transcribe");
-      const sttEndpoint = document.getElementById("sttEndpoint");
-      const sttRow = document.getElementById("sttRow");
       const logEl = document.getElementById("log");
       const bgSound = document.getElementById("bgSound");
       const bgToggle = document.getElementById("bgToggle");
@@ -311,27 +279,13 @@
       let bgBusy = false;
       let bgTrack = "";
 
-      /** Timestamped event log (WP9 demo: transcription results + errors). */
+      /** Timestamped event log (barge-ins, background-sound errors). */
       function logLine(text, isError = false) {
         const line = document.createElement("div");
         if (isError) line.className = "err";
         line.textContent = `${new Date().toISOString().slice(11, 23)} ${text}`;
         logEl.prepend(line);
         while (logEl.children.length > 20) logEl.lastChild.remove();
-      }
-
-      /** WP9: STT strictly outside the real-time loop — called from onTurnEnd only,
-       *  fire-and-forget with a catch; failures never touch detection events. */
-      function transcribeTurn(audio) {
-        if (!transcribeToggle.checked || !sttEndpoint.value.trim()) return;
-        try {
-          const adapter = new CloudStubAdapter({ endpoint: sttEndpoint.value.trim() });
-          adapter.transcribe(audio)
-            .then((t) => logLine(`💬 "${t.text}"${t.confidence !== undefined ? ` (${(t.confidence * 100).toFixed(0)}%)` : ""}`))
-            .catch((err) => logLine(`STT failed: ${err.message}`, true));
-        } catch (err) {
-          logLine(`STT setup failed: ${err.message}`, true);
-        }
       }
 
       // -------------------------------------------------------------------------
@@ -438,7 +392,6 @@
               // turn-finished log line (WP2 behavior spec)
               dbg.textContent = `turn: ${(e.durationMs / 1000).toFixed(1)} s` +
                 (e.truncated ? " (truncated)" : "") + (e.afterInterrupt ? " (after interrupt)" : "");
-              transcribeTurn(e.audio); // WP9 plug point — never affects detection
             },
             // S3 (WP5): kept for completeness; the demo no longer drives TTS.
             onInterrupt: (info) => {
@@ -456,7 +409,6 @@
           button.textContent = "Stop microphone";
           button.setAttribute("aria-pressed", "true");
           smartTurn.disabled = true;
-          sttRow.hidden = false;
           label.textContent = "not listening";
           if (forceNoAec || instance.degraded.aec) {
             errEl.textContent = humanMessage("no-aec");
