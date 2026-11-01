@@ -1,9 +1,7 @@
 # Background Sound Sources
 
 All sounds are from [Pixabay](https://pixabay.com/) and are used as ambient
-background noise on the demo page. The original files were provided in
-`plans/rev-3/assets/` (planning only); this directory holds the runtime copies
-served by `index.html`.
+background noise on the demo page.
 
 | Demo label | Runtime file | Original Pixabay filename | Length | Size |
 |---|---|---|---|---|
