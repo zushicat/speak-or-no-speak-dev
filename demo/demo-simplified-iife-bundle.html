@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Speak Or No Speak — simplified demo</title>
+  <style>
+    /* The only styles: super light gray background, dark gray text. */
+    body {
+      background: #fafafa;
+      color: #333;
+    }
+  </style>
+  <!-- Pinned CDN runtime libs — register the globals `ort` and `vad`,
+       read by the Silero engine adapter at start() time. -->
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.31/dist/bundle.min.js"></script>
+  <!-- The prebuilt IIFE bundle from the CDN: a classic <script>, no modules —
+       it defines the global window.SpeakOrNoSpeak. -->
+  <script src="https://cdn.jsdelivr.net/gh/zushicat/speak-or-no-speak/build/speak-or-no-speak.iife.js"></script>
+</head>
+
+<body>
+  <h1>Speak Or No Speak</h1>
+
+  <p id="label" aria-live="polite">press start</p>
+
+  <p>
+    <button id="start">Start microphone</button>
+  </p>
+
+  <p>
+    <input type="checkbox" id="smartTurn">
+    <label for="smartTurn">Smart Turn (semantic end-of-turn, +8 MB)</label>
+  </p>
+
+  <p id="err"></p>
+
+  <!--
+    demo-simplified-iife-bundle.html — minimal version of demo-iife-bundle.html
+    (docs/04-embedding.md §4.4 "Mode 3 — prebuilt IIFE bundle").
+
+    Differences from demo-iife-bundle.html:
+      - only styles are the page colors (super light gray bg, dark gray text)
+      - no listening dot — plain text status only
+      - no background-noise player, no STT/transcription row, no event log
+      - the library comes from the CDN (jsDelivr GitHub mirror), not ../build/
+
+    Run it (secure context required — file:// will not work):
+        npm start        # python3 -m http.server 5173, serves the checkout root
+        open http://localhost:5173/demo/demo-simplified-iife-bundle.html
+    Because every asset is a https:// CDN URL, the page also works from any
+    other static server root (or a host that serves only this one file).
+  -->
+
+  <!-- The entire consumer code — no modules, the global is the whole API. -->
+  <script>
+    const bundle = window.SpeakOrNoSpeak;
+
+    const button = document.getElementById("start");
+    const label = document.getElementById("label");
+    const errEl = document.getElementById("err");
+    const smartTurn = document.getElementById("smartTurn");
+
+    if (!bundle) {
+      // The bundle <script> failed (offline / CDN down): render, never throw.
+      label.textContent = "bundle failed to load";
+      errEl.textContent =
+        "window.SpeakOrNoSpeak is missing — the IIFE bundle did not load from " +
+        "https://cdn.jsdelivr.net/gh/zushicat/speak-or-no-speak/build/speak-or-no-speak.iife.js";
+    } else {
+      const { createSpeakOrNoSpeak, humanMessage, SmartTurnModel } = bundle;
+
+      let sons = null;
+      let micRunning = false;
+      let micBusy = false;
+
+      /** Cached across start/stop cycles — the ONNX session loads once. */
+      let smartTurnModel = null;
+
+      function setRunning(running) {
+        micRunning = running;
+        button.textContent = running ? "Stop microphone" : "Start microphone";
+        button.setAttribute("aria-pressed", String(running));
+        smartTurn.disabled = running;
+      }
+
+      async function toggleMicrophone() {
+        if (micBusy) return;
+        if (micRunning) {
+          stopMicrophone();
+          return;
+        }
+        micBusy = true;
+        button.disabled = true;
+        try {
+          await startMicrophone();
+        } finally {
+          micBusy = false;
+          button.disabled = false;
+        }
+      }
+
+      async function startMicrophone() {
+        errEl.textContent = "";
+        label.textContent = "starting…";
+
+        // Optional semantic end-of-turn model (checkbox; +8 MB asset). One
+        // instance is cached so start/stop cycles do not reload the session.
+        if (smartTurn.checked && !smartTurnModel) smartTurnModel = new SmartTurnModel();
+
+        let instance = null;
+        try {
+          instance = await createSpeakOrNoSpeak({
+            turnModel: smartTurn.checked ? smartTurnModel : undefined,
+            onSpeechStart: () => {
+              label.textContent = "listening";
+            },
+            onTurnEnd: () => {
+              label.textContent = "not listening";
+            },
+            onLevel: () => { },
+            onError: onError,
+            debug: false,
+          });
+          await instance.start();
+          sons = instance;
+          setRunning(true);
+          label.textContent = "not listening";
+          if (instance.degraded.aec) errEl.textContent = humanMessage("no-aec");
+          if (instance.degraded.engine === "energy") {
+            errEl.textContent = humanMessage("engine-fallback");
+          }
+        } catch (err) {
+          // onError may already have rendered the message; otherwise show it here.
+          try { instance?.stop(); } catch { /* already torn down */ }
+          sons = null;
+          setRunning(false);
+          label.textContent = "press start";
+          errEl.textContent = err?.code
+            ? humanMessage(err.code)
+            : `Error: ${err?.message ?? err}`;
+        }
+      }
+
+      function stopMicrophone() {
+        try {
+          sons?.stop();
+        } catch { /* already torn down */ }
+        sons = null;
+        setRunning(false);
+        label.textContent = "press start";
+        errEl.textContent = "";
+      }
+
+      function onError(err) {
+        errEl.textContent = humanMessage(err.code) ?? `Error (${err.code}): ${err.message}`;
+        // eslint-disable-next-line no-console
+        console.error("[sons] onError:", err);
+      }
+
+      // Wiring
+      button.addEventListener("click", toggleMicrophone);
+
+      // Release the mic when the page is left (reload / bfcache).
+      window.addEventListener("pagehide", () => {
+        if (micRunning) stopMicrophone();
+      });
+    }
+  </script>
+</body>
+
+</html>
