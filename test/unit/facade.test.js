@@ -86,7 +86,9 @@ test("t13: facade lifecycle, state, events, agent flag, degraded", async () => {
   assert.equal(seen.turnEnds.length, 2, "redemption-eligible turn flushes on disarm");
   assert.equal(seen.turnEnds[1].afterInterrupt, true);
 
-  assert.deepEqual(sons.degraded, { aec: false, engine: "silero" });
+  // WP-E1 D2: degraded gained aecScope — the legacy mock engine (no aecScope
+  // field) reports the honest "unknown".
+  assert.deepEqual(sons.degraded, { aec: false, engine: "silero", aecScope: "unknown" });
 
   sons.stop();
   assert.equal(sons.state, "idle");

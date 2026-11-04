@@ -14,10 +14,12 @@ test("DEFAULTS match the documented values (plan §4.3, WP1 D-WP1-1 recalibratio
   assert.equal(t.bargeInConfirmFrames, 6, "6 × 32 ms = 192 ms (plan: 2 × 96 ms)");
   assert.equal(t.maxTurnMs, 30000);
   assert.equal(t.graceAfterInterruptMs, 500);
-  assert.equal(DEFAULTS.mic.echoCancellation, true);
+  // WP-E1 D1: the default requests the widest scope as an *ideal*.
+  assert.deepEqual(DEFAULTS.mic.echoCancellation, { ideal: "all" });
   assert.equal(DEFAULTS.mic.noiseSuppression, true);
   assert.equal(DEFAULTS.mic.autoGainControl, true);
   assert.equal(DEFAULTS.debug, false);
+  assert.equal(DEFAULTS.strictGating, "auto", "WP-E1 D5 default");
 });
 
 test("mergeOptions: user values win, untouched defaults survive (nested)", () => {
@@ -29,7 +31,7 @@ test("mergeOptions: user values win, untouched defaults survive (nested)", () =>
   assert.equal(merged.thresholds.onsetSpeechThreshold, 0.6, "default kept");
   assert.equal(merged.thresholds.maxTurnMs, 30000, "default kept");
   assert.equal(merged.debug, true);
-  assert.equal(merged.mic.echoCancellation, true);
+  assert.deepEqual(merged.mic.echoCancellation, { ideal: "all" }, "WP-E1 D1 default kept");
 });
 
 test("mergeOptions: non-plain-object values replace, arrays are not merged", () => {

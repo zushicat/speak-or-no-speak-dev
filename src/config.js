@@ -4,6 +4,8 @@
  * @module config
  */
 
+import { AEC_CONSTRAINTS } from "./vad/aec-scope.js";
+
 /**
  * Default configuration. Every value traceable to master plan §4.3 or a WP
  * decision; frame-count thresholds are calibrated for Silero v5's 32 ms
@@ -14,13 +16,14 @@
  * @type {import("./types.js").SpeakOrNoSpeakOptions & { thresholds: import("./types.js").Thresholds }}
  */
 export const DEFAULTS = {
-  /** Browser AEC is the E1 echo-safety groundwork (plan §8). */
-  mic: {
-    channelCount: 1,
-    echoCancellation: true,
-    noiseSuppression: true,
-    autoGainControl: true,
-  },
+  /**
+   * Browser AEC constraints — WP-E1 D1: widest scope as an *ideal*
+   * (`{ideal:"all"}`), shared verbatim with the engines via
+   * `AEC_CONSTRAINTS` (src/vad/aec-scope.js). A user's primitive
+   * `mic.echoCancellation` (e.g. `false`) still replaces it (mergeOptions:
+   * primitive beats object).
+   */
+  mic: { ...AEC_CONSTRAINTS },
   thresholds: {
     /** frame "is speech" level (plan §4.3) */
     onsetSpeechThreshold: 0.6,
@@ -54,6 +57,12 @@ export const DEFAULTS = {
   },
   /** record state-transition traces on the detector */
   debug: false,
+  /**
+   * WP-E1 D5: stricter barge-in gating override. "auto" (default) applies the
+   * scope-aware rule (stricter when scope is "none", or "unknown"/
+   * "remote-only" without an active agent-audio route); "on"/"off" force it.
+   */
+  strictGating: "auto",
 };
 
 /**
