@@ -23,6 +23,7 @@
 import { VadEngine } from "./vad-engine.js";
 import { DEFAULTS, mergeOptions } from "../config.js";
 import { ERROR_CODES, SpeakError, humanMessage } from "../errors.js";
+import { AEC_SCOPE, classifyAecScope } from "./aec-scope.js";
 
 const TARGET_RATE = 16000;
 const FRAME_SAMPLES = 512;
@@ -57,6 +58,14 @@ export class EnergyVad extends VadEngine {
     this.started = false;
     this.paused = false;
     this.noiseFloor = 0.001; // initial guess; adapts within ~1 s
+    /**
+     * Classified AEC scope of the (last opened) mic track — WP-E1 D2/D3
+     * (same classifier as the Silero adapter); `null` before the first start().
+     * @type {import("./aec-scope.js").AecScope|null}
+     */
+    this.aecScope = null;
+    /** Derived boolean (WP-E1): true iff the scope is "none" (F3 back-compat). */
+    this.aecDegraded = false;
     this._inBuf = new Float32Array(0);
     this._frameBuf = new Float32Array(FRAME_SAMPLES);
     this._frameFill = 0;
@@ -96,9 +105,14 @@ export class EnergyVad extends VadEngine {
       this.stream = await navigator.mediaDevices.getUserMedia({ audio: this.micConstraints });
       const track = this.stream.getAudioTracks()[0];
       const settings = track.getSettings();
-      if (settings.echoCancellation !== true) {
-        this.aecDegraded = true;
+      // WP-E1: honest scope classification (same classifier as the adapter);
+      // aecDegraded stays the derived scope === "none" boolean (F3).
+      this.aecScope = classifyAecScope(settings, this.micConstraints.echoCancellation);
+      this.aecDegraded = this.aecScope === AEC_SCOPE.NONE;
+      if (this.aecScope === AEC_SCOPE.NONE) {
         this._emitError(ERROR_CODES.NO_AEC, humanMessage(ERROR_CODES.NO_AEC));
+      } else if (this.aecScope === AEC_SCOPE.UNKNOWN) {
+        this._emitError(ERROR_CODES.AEC_SCOPE_LIMITED, humanMessage(ERROR_CODES.AEC_SCOPE_LIMITED));
       }
       this.ctx = new AudioContext();
       await this.ctx.resume();

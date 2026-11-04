@@ -42,6 +42,13 @@
 
 import { VadEngine } from "./vad-engine.js";
 import { ERROR_CODES, SpeakError } from "../errors.js";
+import {
+  AEC_CONSTRAINTS,
+  AEC_SCOPE,
+  classifyAecScope,
+  endedFallbackConstraints,
+  isAllStyleRequest,
+} from "./aec-scope.js";
 
 /** vad-web dist base — also where the worklet bundle + silero_vad_v5.onnx live. */
 const VAD_WEB_BASE = "https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.31/dist/";
@@ -53,14 +60,15 @@ const FRAME_SAMPLES = 1536;
 const SAMPLE_RATE = 16000;
 /** MicVAD.new must resolve within this window or we retry the legacy processor path. */
 const VAD_NEW_TIMEOUT_MS = 8000;
-
-/** Default mic constraints — browser AEC is the E1 echo-safety groundwork (plan §8). */
-const AEC_CONSTRAINTS = {
-  channelCount: 1,
-  echoCancellation: true,
-  noiseSuppression: true,
-  autoGainControl: true,
-};
+/**
+ * D4 ended-stream window: a track opened with an "all"-style request that
+ * ends by itself within ~3 s of the request (macOS 15+ without the OS
+ * *Screen & System Audio Recording* permission — Chromium 479234114) triggers
+ * exactly one fallback re-request. The healthy path pays no extra latency —
+ * the decision point is the end of the pipeline build (see
+ * `_openMicAndBuildVad`).
+ */
+const ENDED_WINDOW_MS = 3000;
 
 /** RMS loudness of a float32 mono frame, 0..1. */
 function computeRms(frame) {
@@ -91,8 +99,25 @@ export class SileroVadAdapter extends VadEngine {
     this.stream = null;
     /** @type {MediaTrackSettings|null} — mic track settings captured at start() */
     this.micSettings = null;
-    /** true if the mic track reports echoCancellation !== true (WP5 gating input) */
+    /**
+     * Classified AEC scope of the (last opened) mic track — WP-E1 D2/D3.
+     * Honest label: "all" | "remote-only" | "unknown" | "none"; `null` before
+     * the first start().
+     * @type {import("./aec-scope.js").AecScope|null}
+     */
+    this.aecScope = null;
+    /**
+     * Derived boolean (WP-E1): true iff the scope is "none" — the facade and
+     * the energy engine read this (F3 back-compat).
+     */
     this.aecDegraded = false;
+    /** "running" | "paused" | "stopped" — mic intent; gates the ended guard
+     *  (vad.pause() stops the tracks, which must not look like a D4 death). */
+    this._micIntent = "stopped";
+    /** @type {MediaStreamTrack|null} — the live mic track (ended guard target) */
+    this._track = null;
+    /** true once the D4 fallback re-request was used in the current start() */
+    this._aecFallbackUsed = false;
     /** "audio-worklet" | "script-processor" — which capture path actually works */
     this.processorTypeUsed = null;
     /** runtime finding: does the engine deliver raw frames? (plan 1.3.3 decision) */
@@ -121,6 +146,143 @@ export class SileroVadAdapter extends VadEngine {
   /** @private */
   _emitFrame(frame) {
     for (const cb of this.frameCallbacks) cb(frame);
+  }
+
+  /**
+   * Capture the mic track settings and classify the AEC scope (WP-E1 D2/D3).
+   * Keeps `aecDegraded` as the derived `scope === "none"` boolean (F3), and
+   * warns honestly: `no-aec` for "none", `aec-scope-limited` for "unknown"
+   * (the browser-decided `true` we cannot verify — precisely the leaking
+   * Chromium default).
+   * @private
+   */
+  _classifyMicSettings() {
+    this.micSettings = this._track.getSettings();
+    // eslint-disable-next-line no-console
+    console.log("[sons] mic settings:", this.micSettings);
+    this.aecScope = classifyAecScope(this.micSettings, this.micConstraints.echoCancellation);
+    this.aecDegraded = this.aecScope === AEC_SCOPE.NONE;
+    if (this.aecScope === AEC_SCOPE.NONE) {
+      this._emitError(
+        ERROR_CODES.NO_AEC,
+        `echoCancellation is not active on the mic track (settings: ${JSON.stringify(this.micSettings)})`
+      );
+    } else if (this.aecScope === AEC_SCOPE.UNKNOWN) {
+      this._emitError(
+        ERROR_CODES.AEC_SCOPE_LIMITED,
+        `echoCancellation reported as browser-decided "true" — its scope could not be verified ` +
+        `(settings: ${JSON.stringify(this.micSettings)})`
+      );
+    }
+  }
+
+  /**
+   * D4 runtime guard: the track ended while the mic was supposed to be
+   * running (NOT via pause/stop — those stop tracks by design). No retry
+   * post-start (plan D4): warn once and report the honest "unknown" scope;
+   * frames have stopped, the app sees the warning.
+   * @private
+   * @param {MediaStreamTrack} track
+   */
+  _attachRuntimeEndedGuard(track) {
+    track.addEventListener("ended", () => {
+      if (this._micIntent !== "running") return;
+      this.aecScope = AEC_SCOPE.UNKNOWN;
+      this._emitError(
+        ERROR_CODES.AEC_SCOPE_FALLBACK,
+        "Mic track ended by itself at runtime — AEC scope is now unknown and frames have stopped."
+      );
+    });
+  }
+
+  /**
+   * Open the mic (D1 constraints), classify the AEC scope and build the
+   * MicVAD pipeline — with the D4 ended-stream fallback (plan D4): a track
+   * opened with an "all"-style request that ends by itself within
+   * {@link ENDED_WINDOW_MS} of the request (macOS 15+ without the OS
+   * *Screen & System Audio Recording* permission — Chromium 479234114) is
+   * re-requested ONCE with the browser default (`echoCancellation: true`),
+   * with a one-time `aec-scope-fallback` warning; the re-classified scope is
+   * honestly "unknown". If the retry's track also dies within the window, the
+   * failure surfaces as-is (a mic that dies twice is not an AEC problem).
+   *
+   * The healthy path pays no extra startup latency: the ended probe runs
+   * concurrently with the pipeline build and is only decided at its end.
+   *
+   * @private
+   * @param {{MicVAD: {new(options: any): Promise<any>}}} vadLib the resolved library (CDN global or npm module)
+   * @returns {Promise<any>} the ready-to-start MicVAD instance
+   */
+  async _openMicAndBuildVad(vadLib) {
+    const isAllStyle = isAllStyleRequest(this.micConstraints.echoCancellation);
+    let constraints = this.micConstraints;
+    for (let attempt = 0; ; attempt++) {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: constraints });
+      const track = stream.getAudioTracks()[0];
+      this.stream = stream;
+      this._track = track;
+      const requestedAt = performance.now();
+      let endedDuringBuild = false;
+      const onEnded = () => { endedDuringBuild = true; };
+      track.addEventListener("ended", onEnded);
+      try {
+        this._classifyMicSettings();
+        const vad = await this._newVadWithFallback(vadLib);
+        track.removeEventListener("ended", onEnded);
+
+        // D4 decision point: did the track die within the window while the
+        // pipeline was being built?
+        const diedInWindow = endedDuringBuild && performance.now() - requestedAt <= ENDED_WINDOW_MS;
+        if (diedInWindow && this._micIntent === "running") {
+          if (attempt === 0 && isAllStyle) {
+            // Exactly one fallback re-request with the browser default.
+            this._aecFallbackUsed = true;
+            this._emitError(
+              ERROR_CODES.AEC_SCOPE_FALLBACK,
+              "System-wide echo cancellation was not available (OS permission) — " +
+              "fell back to the browser default (one-time re-request)."
+            );
+            stream.getTracks().forEach((t) => t.stop());
+            constraints = endedFallbackConstraints(this.micConstraints.echoCancellation);
+            continue;
+          }
+          // The retry (or a non-"all" request) died too — a mic that dies
+          // twice is not an AEC problem: surface as audio-pipeline.
+          throw new SpeakError(
+            ERROR_CODES.AUDIO_PIPELINE,
+            "Mic track ended by itself during start — not an AEC-scope problem."
+          );
+        }
+
+        this._attachRuntimeEndedGuard(track);
+        return vad;
+      } catch (err) {
+        track.removeEventListener("ended", onEnded);
+        if (err instanceof SpeakError && err.code === ERROR_CODES.AUDIO_PIPELINE) throw err;
+        const diedInWindow = endedDuringBuild && performance.now() - requestedAt <= ENDED_WINDOW_MS;
+        if (diedInWindow && this._micIntent === "running") {
+          if (attempt === 0 && isAllStyle) {
+            // The pipeline build failed on a self-ended "all" track → D4
+            // retry (once) instead of surfacing an engine error.
+            this._aecFallbackUsed = true;
+            this._emitError(
+              ERROR_CODES.AEC_SCOPE_FALLBACK,
+              "System-wide echo cancellation was not available (OS permission) — " +
+              "fell back to the browser default (one-time re-request)."
+            );
+            stream.getTracks().forEach((t) => t.stop());
+            constraints = endedFallbackConstraints(this.micConstraints.echoCancellation);
+            continue;
+          }
+          throw new SpeakError(
+            ERROR_CODES.AUDIO_PIPELINE,
+            "Mic track ended by itself during start — not an AEC-scope problem.",
+            err
+          );
+        }
+        throw err;
+      }
+    }
   }
 
   /**
@@ -221,29 +383,30 @@ export class SileroVadAdapter extends VadEngine {
         this._emitError(ERROR_CODES.INSECURE_CONTEXT, msg);
         throw new SpeakError(ERROR_CODES.INSECURE_CONTEXT, msg);
       }
-      this.stream = await navigator.mediaDevices.getUserMedia({ audio: this.micConstraints });
-      const track = this.stream.getAudioTracks()[0];
-      this.micSettings = track.getSettings();
-      // eslint-disable-next-line no-console
-      console.log("[sons] mic settings:", this.micSettings);
-      if (this.micSettings.echoCancellation !== true) {
-        // Interim warning code; facade switches to stricter barge-in gating in WP5.
-        this.aecDegraded = true;
-        this._emitError(
-          ERROR_CODES.NO_AEC,
-          `echoCancellation is not active on the mic track (settings: ${JSON.stringify(this.micSettings)})`
-        );
+      // 1. Mic with AEC constraints (D1: widest scope as an *ideal*) — our
+      //    stream, not vad-web's default.
+      if (!navigator.mediaDevices?.getUserMedia) {
+        const msg = "Microphone API unavailable — this page is not running in a secure context (serve via http://localhost, never file://).";
+        this._emitError(ERROR_CODES.INSECURE_CONTEXT, msg);
+        throw new SpeakError(ERROR_CODES.INSECURE_CONTEXT, msg);
       }
+      this._micIntent = "running";
+      this._aecFallbackUsed = false;
 
+      // Interface contract: resolve when the first frame is emitted. Created
+      // before the pipeline build so a D4 retry re-resolves the same promise.
+      const firstFrame = new Promise((resolve) => {
+        this._firstFrameResolve = resolve;
+      });
+
+      // D1+D4: open the mic, classify the scope, build the capture pipeline —
+      // with the bounded ended-stream fallback (see _openMicAndBuildVad).
       // 2. Instantiate vad-web 0.0.31 with OUR stream (getStream override — the
       //    documented way to pass a stream; `stream` itself is not an option).
       //    Timeout-guarded: if the AudioWorklet path hangs (addModule never
       //    resolves — seen in automation Chromium, old Safari, webviews), retry
       //    with the documented ScriptProcessor legacy path.
-      const firstFrame = new Promise((resolve) => {
-        this._firstFrameResolve = resolve;
-      });
-      this.vad = await this._newVadWithFallback(vadLib);
+      this.vad = await this._openMicAndBuildVad(vadLib);
 
       // 5. Our state machine (WP3) owns turn events — vad-web's internal
       //    segmentation (onSpeechStart/onSpeechEnd) stays unwired by design.
@@ -280,6 +443,7 @@ export class SileroVadAdapter extends VadEngine {
 
   /** Stop the engine and release the microphone. */
   stop() {
+    this._micIntent = "stopped"; // before stopping tracks — the ended guard must ignore this
     try {
       this.vad?.pause(); // default pauseStream stops the tracks
     } catch {
@@ -287,20 +451,26 @@ export class SileroVadAdapter extends VadEngine {
     }
     this.stream?.getTracks().forEach((t) => t.stop());
     this.stream = null;
+    this._track = null;
     this.vad = null;
+    this._aecFallbackUsed = false;
     this.started = false;
     this.paused = false;
   }
 
   /**
    * Pause frame emission. vad-web's default pause stops the mic tracks; its
-   * default resume creates a new stream with standard constraints — which match
-   * ours exactly (AEC_CONSTRAINTS), so pause/resume keeps AEC active. WP3/WP5
-   * may swap in track.enable toggling if real-time pause semantics matter.
+   * default resume creates a new stream with standard constraints — which
+   * matched the boolean AEC defaults exactly (WP3/WP5). With the D1
+   * `{ideal:"all"}` constraint the resumed stream is vad-web's own, so the
+   * scope after a pause/resume cycle is NOT renegotiated in WP-E1 (recorded
+   * as a known limitation). The mic-intent flag keeps the D4 ended guard from
+   * misreading a deliberate pause as a track death.
    */
   pause() {
     if (this.started && !this.paused) {
       this.paused = true;
+      this._micIntent = "paused"; // before vad.pause() — it stops the tracks
       try {
         this.vad?.pause();
       } catch {
@@ -312,6 +482,7 @@ export class SileroVadAdapter extends VadEngine {
   resume() {
     if (this.started && this.paused) {
       this.paused = false;
+      this._micIntent = "running";
       try {
         this.vad?.start();
       } catch {

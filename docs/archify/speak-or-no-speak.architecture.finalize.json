@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
-  "ok": false,
+  "ok": true,
   "command": "finalize",
-  "status": "fail",
+  "status": "pass",
   "type": "architecture",
   "quality": "showcase",
-  "startedAt": "2026-10-31T07:46:07.363Z",
+  "startedAt": "2026-11-04T14:31:31.285Z",
   "specification": {
-    "path": "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/candidate.json",
-    "sha256": "c9279aa0abed6fa4b23377390ff3358ed973c1162a13873784d9f791335ca50d",
-    "bytes": 10289
+    "path": "/Users/karin/_programming/speak-or-no-speak/docs/archify/candidate.json",
+    "sha256": "686d2f34a299a89245c22a21cc421015cee42f4b0182468a9334413a9cb89416",
+    "bytes": 13093
   },
   "artifact": {
-    "path": "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/speak-or-no-speak.architecture.html",
-    "sha256": "45d5adb0429996045c148779933c9a6a7560d5556b9b3af4036b4eaeb13e1c23",
-    "bytes": 776783
+    "path": "/Users/karin/_programming/speak-or-no-speak/docs/archify/speak-or-no-speak.architecture.html",
+    "sha256": "5283996c9efbed89a6f632587775c284e667bd8061e5c6ca0e03a1e984606f9a",
+    "bytes": 788298
   },
   "stages": {
     "validate": {
@@ -27,8 +27,8 @@
         "/Users/karin/.dsh/profiles/web/node_modules/@tt-a1i/archify-dsh/skills/archify/bin/archify.mjs",
         "deliver",
         "architecture",
-        "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/candidate.json",
-        "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/speak-or-no-speak.architecture.html",
+        "/Users/karin/_programming/speak-or-no-speak/docs/archify/candidate.json",
+        "/Users/karin/_programming/speak-or-no-speak/docs/archify/speak-or-no-speak.architecture.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -40,8 +40,8 @@
         "ok": true,
         "command": "validate",
         "specification": {
-          "sha256": "c9279aa0abed6fa4b23377390ff3358ed973c1162a13873784d9f791335ca50d",
-          "bytes": 10289
+          "sha256": "686d2f34a299a89245c22a21cc421015cee42f4b0182468a9334413a9cb89416",
+          "bytes": 13093
         },
         "validation": {
           "checksPassed": 9,
@@ -56,14 +56,14 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 273,
+      "durationMs": 337,
       "command": [
         "/opt/homebrew/Cellar/node/26.7.0/bin/node",
         "/Users/karin/.dsh/profiles/web/node_modules/@tt-a1i/archify-dsh/skills/archify/bin/archify.mjs",
         "deliver",
         "architecture",
-        "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/candidate.json",
-        "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/speak-or-no-speak.architecture.html",
+        "/Users/karin/_programming/speak-or-no-speak/docs/archify/candidate.json",
+        "/Users/karin/_programming/speak-or-no-speak/docs/archify/speak-or-no-speak.architecture.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -72,19 +72,19 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "8db22498-d83a-44cf-8865-f54bf60d1493",
+        "receiptId": "ba6d15be-5f9f-4d42-9eb0-3ea1b55626f5",
         "ok": true,
         "command": "deliver",
         "type": "architecture",
-        "input": "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/candidate.json",
-        "output": "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/speak-or-no-speak.architecture.html",
+        "input": "/Users/karin/_programming/speak-or-no-speak/docs/archify/candidate.json",
+        "output": "/Users/karin/_programming/speak-or-no-speak/docs/archify/speak-or-no-speak.architecture.html",
         "specification": {
-          "sha256": "c9279aa0abed6fa4b23377390ff3358ed973c1162a13873784d9f791335ca50d",
-          "bytes": 10289
+          "sha256": "686d2f34a299a89245c22a21cc421015cee42f4b0182468a9334413a9cb89416",
+          "bytes": 13093
         },
         "artifact": {
-          "sha256": "45d5adb0429996045c148779933c9a6a7560d5556b9b3af4036b4eaeb13e1c23",
-          "bytes": 776783
+          "sha256": "5283996c9efbed89a6f632587775c284e667bd8061e5c6ca0e03a1e984606f9a",
+          "bytes": 788298
         },
         "validation": {
           "checksPassed": 9,
@@ -97,8 +97,8 @@
         "evidence": {
           "verified": true,
           "repository": "git@github-personal:zushicat/speak-or-no-speak.git",
-          "revision": "1c1be5d61a0bfd6009db5d28fb431b896d4e9f13",
-          "references": 20,
+          "revision": "fc7ecb06f38b613cc9232f0c2a7665c7bcaf1d00",
+          "references": 27,
           "linkMode": "local-only"
         },
         "update": {
@@ -117,20 +117,20 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 99,
+      "durationMs": 93,
       "command": [
         "/opt/homebrew/Cellar/node/26.7.0/bin/node",
         "/Users/karin/.dsh/profiles/web/node_modules/@tt-a1i/archify-dsh/skills/archify/bin/archify.mjs",
         "check",
-        "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/speak-or-no-speak.architecture.html",
+        "/Users/karin/_programming/speak-or-no-speak/docs/archify/speak-or-no-speak.architecture.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/speak-or-no-speak.architecture.html",
+        "file": "/Users/karin/_programming/speak-or-no-speak/docs/archify/speak-or-no-speak.architecture.html",
         "artifact": {
-          "sha256": "45d5adb0429996045c148779933c9a6a7560d5556b9b3af4036b4eaeb13e1c23",
-          "bytes": 776783
+          "sha256": "5283996c9efbed89a6f632587775c284e667bd8061e5c6ca0e03a1e984606f9a",
+          "bytes": 788298
         },
         "checks": [
           {
@@ -191,20 +191,20 @@
           },
           "metrics": {
             "properCrossings": 0,
-            "resolvedCrossovers": 0,
+            "resolvedCrossovers": 2,
             "ambiguousCorridors": 0,
             "arrowheadCollisions": 0,
             "containerBorderRuns": 0,
             "labelRouteClearanceIssues": 0,
             "labelCanvasOverflowIssues": 0,
-            "minLabelRouteClearance": 20,
+            "minLabelRouteClearance": 4.1,
             "desktopReadabilityIssues": 0,
             "viewportHeightIssues": 0,
-            "minProjectedNodeTextPx": 7.037908496732026,
-            "maxBends": 4,
-            "routesOverSuggestedBends": 2,
-            "maxStretch": 2.022,
-            "routesOverSuggestedStretch": 2,
+            "minProjectedNodeTextPx": 6.0596510973550926,
+            "maxBends": 6,
+            "routesOverSuggestedBends": 3,
+            "maxStretch": 1.248,
+            "routesOverSuggestedStretch": 0,
             "minSegmentPx": 16,
             "minInteriorSegmentPx": 16,
             "shortSegmentCount": 0,
@@ -219,43 +219,90 @@
             "microSegmentPx": 8
           },
           "routeReview": {
-            "crossings": [],
+            "crossings": [
+              {
+                "left": {
+                  "id": "silero-detector",
+                  "from": "silero",
+                  "to": "detector",
+                  "label": "VadFrame · 32 ms",
+                  "collectionIndex": 2,
+                  "artifactIndex": 3
+                },
+                "right": {
+                  "id": "energy-detector",
+                  "from": "energy",
+                  "to": "detector",
+                  "label": "degraded frames",
+                  "collectionIndex": 4,
+                  "artifactIndex": 5
+                },
+                "point": [
+                  857.2272727272727,
+                  403
+                ],
+                "sharedNode": "detector"
+              },
+              {
+                "left": {
+                  "id": "energy-detector",
+                  "from": "energy",
+                  "to": "detector",
+                  "label": "degraded frames",
+                  "collectionIndex": 4,
+                  "artifactIndex": 5
+                },
+                "right": {
+                  "id": "facade-energy",
+                  "from": "facade",
+                  "to": "energy",
+                  "label": "engine-fallback ladder",
+                  "collectionIndex": 6,
+                  "artifactIndex": 7
+                },
+                "point": [
+                  856.4999999999999,
+                  447
+                ],
+                "sharedNode": "energy"
+              }
+            ],
             "detours": [
+              {
+                "relationship": {
+                  "id": "silero-detector",
+                  "from": "silero",
+                  "to": "detector",
+                  "label": "VadFrame · 32 ms",
+                  "collectionIndex": 2,
+                  "artifactIndex": 3
+                },
+                "bends": 4,
+                "stretch": 1.234
+              },
               {
                 "relationship": {
                   "id": "facade-energy",
                   "from": "facade",
                   "to": "energy",
-                  "label": "engine failure → energy fallback",
-                  "collectionIndex": 5,
-                  "artifactIndex": 6
-                },
-                "bends": 2,
-                "stretch": 2.022
-              },
-              {
-                "relationship": {
-                  "id": "facade-detector",
-                  "from": "facade",
-                  "to": "detector",
-                  "label": "wires callbacks",
+                  "label": "engine-fallback ladder",
                   "collectionIndex": 6,
                   "artifactIndex": 7
                 },
-                "bends": 3,
-                "stretch": 1.372
+                "bends": 6,
+                "stretch": 1.074
               },
               {
                 "relationship": {
-                  "id": "app-cdn",
-                  "from": "app",
-                  "to": "cdn",
-                  "label": "pinned &lt;script&gt; tags",
-                  "collectionIndex": 9,
-                  "artifactIndex": 10
+                  "id": "voicegate-weights",
+                  "from": "voicegate",
+                  "to": "weights",
+                  "label": "embedding ONNX",
+                  "collectionIndex": 14,
+                  "artifactIndex": 15
                 },
-                "bends": 4,
-                "stretch": 1.058
+                "bends": 3,
+                "stretch": 1
               }
             ]
           },
@@ -265,7 +312,7 @@
             "emptyTopRatio": 0.012,
             "occupiedTop": 10,
             "viewBoxTop": 0,
-            "canvasHeight": 838,
+            "canvasHeight": 824,
             "typicalNodeHeight": 84,
             "reviewSuggested": false
           },
@@ -275,7 +322,7 @@
             "availableDiagramWidth": 1346,
             "actualBudgetPx": 1346,
             "actualReaderWidth": 1376,
-            "desiredReaderWidth": 1464.375,
+            "desiredReaderWidth": 1695.9375,
             "viewportCap": 1376,
             "limit": "viewport-cap",
             "requestedTargetPx": 7.5,
@@ -284,46 +331,46 @@
             "hardFloorMet": true,
             "minimumOwner": {
               "kind": "edge",
-              "id": "mic-silero",
-              "from": "mic",
-              "to": "silero"
+              "id": "user-mic",
+              "from": "user",
+              "to": "mic"
             },
             "minimumSourceTextPx": 8,
-            "minimumProjectedTextPx": 7.037908496732026,
-            "semanticTextCount": 39
+            "minimumProjectedTextPx": 6.0596510973550926,
+            "semanticTextCount": 49
           },
           "issues": []
         },
         "provenance": "current",
-        "deliveryReceiptId": "8db22498-d83a-44cf-8865-f54bf60d1493"
+        "deliveryReceiptId": "ba6d15be-5f9f-4d42-9eb0-3ea1b55626f5"
       }
     },
     "browser-check": {
-      "status": "fail",
-      "exitCode": 1,
-      "durationMs": 475,
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 846,
       "command": [
         "/opt/homebrew/Cellar/node/26.7.0/bin/node",
         "/Users/karin/.dsh/profiles/web/node_modules/@tt-a1i/archify-dsh/skills/archify/bin/archify.mjs",
         "browser-check",
-        "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/speak-or-no-speak.architecture.html",
+        "/Users/karin/_programming/speak-or-no-speak/docs/archify/speak-or-no-speak.architecture.html",
         "--json",
         "--require-provenance"
       ],
       "execution": "in-process",
       "receipt": {
         "schemaVersion": 1,
-        "ok": false,
+        "ok": true,
         "command": "browser-check",
         "evidenceKind": "automated-browser",
-        "status": "fail",
+        "status": "pass",
         "visualReview": "not-requested",
         "provenance": "current",
-        "deliveryReceiptId": "8db22498-d83a-44cf-8865-f54bf60d1493",
+        "deliveryReceiptId": "ba6d15be-5f9f-4d42-9eb0-3ea1b55626f5",
         "artifact": {
-          "path": "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/speak-or-no-speak.architecture.html",
-          "sha256": "45d5adb0429996045c148779933c9a6a7560d5556b9b3af4036b4eaeb13e1c23",
-          "bytes": 776783
+          "path": "/Users/karin/_programming/speak-or-no-speak/docs/archify/speak-or-no-speak.architecture.html",
+          "sha256": "5283996c9efbed89a6f632587775c284e667bd8061e5c6ca0e03a1e984606f9a",
+          "bytes": 788298
         },
         "state": {
           "detail": "read",
@@ -333,39 +380,694 @@
           "status": "available",
           "executable": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
         },
-        "diagnostics": [
-          {
-            "code": "viewer/browser-check-runtime",
-            "severity": "error",
-            "message": "browser-check could not complete its Chrome inspection.",
-            "subject": {
-              "artifact": "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/speak-or-no-speak.architecture.html"
-            },
-            "evidence": {
-              "reason": "Chrome DevTools read pipe failed: stream ended\nChrome process: still running.\nChrome stderr:\nshpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/6e43855e-e910-4906-8402-9d334f18c422.dmp: Operation not permitted (1)\n[1031/084607.728211:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16d7e8000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.735481:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/f2c4e7d6-bde4-4d87-8c31-f0f9b4fe2479.dmp: Operation not permitted (1)\nFailed to initialize sandbox.[1031/084607.782804:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16cf98000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.790935:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/5e0effba-00ca-46a4-9cab-c36cc576472e.dmp: Operation not permitted (1)\nFailed to initialize sandbox.[1031/084607.951122:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16dcf4000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.958972:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/c36cc805-2e02-4cca-a561-6be514c0aa92.dmp: Operation not permitted (1)\nFailed to initialize sandbox.Failed to initialize sandbox.[1031/084607.973582:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16ce2c000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.981535:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/80d3fe11-64bc-4d93-b254-b8050cefa7bf.dmp: Operation not permitted (1)\n[1031/084607.981762:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16b89c000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.988656:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/b3786381-6226-4693-b373-99db6f223372.dmp: Operation not permitted (1)\nTrying to load the allocator multiple times. This is *not* supported.\n[79470:320221672:1031/084608.040224:ERROR:content/browser/gpu/gpu_process_host.cc:1044] GPU process exited unexpectedly: exit_code=6\n[79470:320221672:1031/084608.041908:ERROR:content/browser/network_service_instance_impl.cc:652] Network service crashed or was terminated, restarting service.\nFailed to initialize sandbox.[1031/084608.045879:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f650000, 0x8000): (os/kern) invalid address (1)\nFailed to initialize sandbox.sandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.sandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.Failed to initialize sandbox.[1031/084608.053526:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/037733a1-498c-48fd-a852-0445f24b8e2e.dmp: Operation not permitted (1)\n[1031/084608.053690:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16d810000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.061281:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/61f62555-2ec4-4f79-8597-8ac7ff92a640.dmp: Operation not permitted (1)\n[1031/084608.061432:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f77c000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.068685:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/a02bd5b1-1a7f-4a72-8b23-94c32748097a.dmp: Operation not permitted (1)\n[1031/084608.068923:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16bb48000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.076593:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/00f877e5-4e13-4e96-9576-46d504adc1da.dmp: Operation not permitted (1)\n[1031/084608.076829:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16b998000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.084855:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/4e11bace-a1de-4440-ac9c-40d1577a23bb.dmp: Operation not permitted (1)\nFailed to initialize sandbox.[1031/084608.086886:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16bc50000, 0x8000): (os/kern) invalid address (1)\n[79470:320221672:1031/084608.091404:ERROR:content/browser/network_service_instance_impl.cc:652] Network service crashed or was terminated, restarting service.\n[79470:320221672:1031/084608.093027:ERROR:content/browser/gpu/gpu_process_host.cc:1044] GPU process exited unexpectedly: exit_code=6\n[1031/084608.094266:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/4a0bed0d-8324-4c0d-bd24-659b701350b5.dmp: Operation not permitted (1)\nsandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.[1031/084608.100199:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16dc88000, 0x8000): (os/kern) invalid address (1)\nsandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.Failed to initialize sandbox.[1031/084608.108262:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/7024931a-9cac-4253-8dbe-e4158e73b964.dmp: Operation not permitted (1)\n[1031/084608.108512:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f0e4000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.116619:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/e6098f88-89e4-4943-a36f-6c13687b7c78.dmp: Operation not permitted (1)\n[1031/084608.116873:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16d7d8000, 0x8000): (os/kern) invalid address (1)\n[79470:320221672:1031/084608.118029:ERROR:content/browser/network_service_instance_impl.cc:652] Network service crashed or was terminated, restarting service.\n[79470:320221672:1031/084608.118878:ERROR:content/browser/gpu/gpu_process_host.cc:1044] GPU process exited unexpectedly: exit_code=6\n[79470:320221672:1031/084608.118887:FATAL:content/browser/gpu/gpu_data_manager_impl_private.cc:389] GPU process isn't usable. Goodbye.\n[1031/084608.124753:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/c348cbb2-178e-49ad-a045-49a1f7f66456.dmp: Operation not permitted (1)\n[1031/084608.125261:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f884000, 0x8000): (os/kern) invalid address (1)\nsandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.[1031/084608.322840:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/5b17021c-19d4-4138-ae1d-4792b5040360.dmp: Operation not permitted (1)\n[1031/084608.324130:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f3ac000, 0x8000): (os/kern) invalid address (1)\nChrome transport: Node v26.7.0, libuv 1.52.1, darwin; pid=79470, exitCode=null, signalCode=null.\nChrome read pipe: readable=false, ended=true, destroyed=false, receivedBytes=1328, messages=3, bufferedBytes=0.\nChrome write pipe: writable=true, ended=false, destroyed=false, completedWrites=3, writtenBytes=255, bufferedBytes=0."
-            },
-            "supportedFixes": [
-              "resolve the reported Chrome inspection error, then rerun browser-check"
-            ]
-          }
-        ],
+        "diagnostics": [],
         "containment": {
-          "status": "fail",
+          "status": "pass",
           "policy": "fit-or-reader-declared-readable-vertical-scroll",
-          "viewports": []
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "theme": "light",
+              "innerWidth": 1440,
+              "innerHeight": 900,
+              "scrollWidth": 1440,
+              "scrollHeight": 900,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1376,
+              "diagramWidth": 1346,
+              "pageComposition": {
+                "bodyPaddingPx": 12,
+                "headerPx": 52,
+                "diagramChromePx": 78,
+                "svgPx": 624,
+                "cardsPx": 0,
+                "viewBoxHeight": 824
+              },
+              "viewBoxWidth": 1777,
+              "minimumProjectedNodeTextPx": 6.0596510973550926,
+              "minimumProjectedNonEdgeTextPx": 6.817107484524479,
+              "minimumProjectedEdgeTextPx": 6.0596510973550926,
+              "minimumProjectedNodeText": "speaks",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "user-mic",
+                "from": "user",
+                "to": "mic"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "theme": "light",
+              "innerWidth": 1600,
+              "innerHeight": 1000,
+              "scrollWidth": 1600,
+              "scrollHeight": 1000,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1536,
+              "diagramWidth": 1506,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 60,
+                "diagramChromePx": 84,
+                "svgPx": 698,
+                "cardsPx": 0,
+                "viewBoxHeight": 824
+              },
+              "viewBoxWidth": 1777,
+              "minimumProjectedNodeTextPx": 6.779966235227913,
+              "minimumProjectedNonEdgeTextPx": 7.627462014631401,
+              "minimumProjectedEdgeTextPx": 6.779966235227913,
+              "minimumProjectedNodeText": "speaks",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "user-mic",
+                "from": "user",
+                "to": "mic"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "theme": "light",
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "scrollWidth": 1920,
+              "scrollHeight": 1080,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1856,
+              "diagramWidth": 1826,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 60,
+                "diagramChromePx": 84,
+                "svgPx": 847,
+                "cardsPx": 0,
+                "viewBoxHeight": 824
+              },
+              "viewBoxWidth": 1777,
+              "minimumProjectedNodeTextPx": 8,
+              "minimumProjectedNonEdgeTextPx": 9,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "speaks",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "user-mic",
+                "from": "user",
+                "to": "mic"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "theme": "light",
+              "innerWidth": 2048,
+              "innerHeight": 1320,
+              "scrollWidth": 2048,
+              "scrollHeight": 1320,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1920,
+              "diagramWidth": 1870,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 68,
+                "diagramChromePx": 94,
+                "svgPx": 867,
+                "cardsPx": 0,
+                "viewBoxHeight": 824
+              },
+              "viewBoxWidth": 1777,
+              "minimumProjectedNodeTextPx": 8,
+              "minimumProjectedNonEdgeTextPx": 9,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "speaks",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "user-mic",
+                "from": "user",
+                "to": "mic"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 44,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            }
+          ]
         },
         "themeStates": {
-          "status": "fail",
-          "viewports": []
+          "status": "pass",
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 1440,
+              "height": 900,
+              "requestedTheme": "dark",
+              "resolvedTheme": "dark",
+              "ok": true
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "requestedTheme": "dark",
+              "resolvedTheme": "dark",
+              "ok": true
+            }
+          ]
         },
         "readability": {
-          "status": "fail",
+          "status": "pass",
           "minimumProjectedNodeTextPx": 6,
-          "viewports": []
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "theme": "light",
+              "innerWidth": 1440,
+              "innerHeight": 900,
+              "scrollWidth": 1440,
+              "scrollHeight": 900,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1376,
+              "diagramWidth": 1346,
+              "pageComposition": {
+                "bodyPaddingPx": 12,
+                "headerPx": 52,
+                "diagramChromePx": 78,
+                "svgPx": 624,
+                "cardsPx": 0,
+                "viewBoxHeight": 824
+              },
+              "viewBoxWidth": 1777,
+              "minimumProjectedNodeTextPx": 6.0596510973550926,
+              "minimumProjectedNonEdgeTextPx": 6.817107484524479,
+              "minimumProjectedEdgeTextPx": 6.0596510973550926,
+              "minimumProjectedNodeText": "speaks",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "user-mic",
+                "from": "user",
+                "to": "mic"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "theme": "light",
+              "innerWidth": 1600,
+              "innerHeight": 1000,
+              "scrollWidth": 1600,
+              "scrollHeight": 1000,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1536,
+              "diagramWidth": 1506,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 60,
+                "diagramChromePx": 84,
+                "svgPx": 698,
+                "cardsPx": 0,
+                "viewBoxHeight": 824
+              },
+              "viewBoxWidth": 1777,
+              "minimumProjectedNodeTextPx": 6.779966235227913,
+              "minimumProjectedNonEdgeTextPx": 7.627462014631401,
+              "minimumProjectedEdgeTextPx": 6.779966235227913,
+              "minimumProjectedNodeText": "speaks",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "user-mic",
+                "from": "user",
+                "to": "mic"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "theme": "light",
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "scrollWidth": 1920,
+              "scrollHeight": 1080,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1856,
+              "diagramWidth": 1826,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 60,
+                "diagramChromePx": 84,
+                "svgPx": 847,
+                "cardsPx": 0,
+                "viewBoxHeight": 824
+              },
+              "viewBoxWidth": 1777,
+              "minimumProjectedNodeTextPx": 8,
+              "minimumProjectedNonEdgeTextPx": 9,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "speaks",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "user-mic",
+                "from": "user",
+                "to": "mic"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "theme": "light",
+              "innerWidth": 2048,
+              "innerHeight": 1320,
+              "scrollWidth": 2048,
+              "scrollHeight": 1320,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1920,
+              "diagramWidth": 1870,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 68,
+                "diagramChromePx": 94,
+                "svgPx": 867,
+                "cardsPx": 0,
+                "viewBoxHeight": 824
+              },
+              "viewBoxWidth": 1777,
+              "minimumProjectedNodeTextPx": 8,
+              "minimumProjectedNonEdgeTextPx": 9,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "speaks",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "user-mic",
+                "from": "user",
+                "to": "mic"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 44,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            }
+          ]
         },
         "viewerChrome": {
-          "status": "fail",
-          "viewports": []
+          "status": "pass",
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "theme": "light",
+              "innerWidth": 1440,
+              "innerHeight": 900,
+              "scrollWidth": 1440,
+              "scrollHeight": 900,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1376,
+              "diagramWidth": 1346,
+              "pageComposition": {
+                "bodyPaddingPx": 12,
+                "headerPx": 52,
+                "diagramChromePx": 78,
+                "svgPx": 624,
+                "cardsPx": 0,
+                "viewBoxHeight": 824
+              },
+              "viewBoxWidth": 1777,
+              "minimumProjectedNodeTextPx": 6.0596510973550926,
+              "minimumProjectedNonEdgeTextPx": 6.817107484524479,
+              "minimumProjectedEdgeTextPx": 6.0596510973550926,
+              "minimumProjectedNodeText": "speaks",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "user-mic",
+                "from": "user",
+                "to": "mic"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "theme": "light",
+              "innerWidth": 1600,
+              "innerHeight": 1000,
+              "scrollWidth": 1600,
+              "scrollHeight": 1000,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1536,
+              "diagramWidth": 1506,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 60,
+                "diagramChromePx": 84,
+                "svgPx": 698,
+                "cardsPx": 0,
+                "viewBoxHeight": 824
+              },
+              "viewBoxWidth": 1777,
+              "minimumProjectedNodeTextPx": 6.779966235227913,
+              "minimumProjectedNonEdgeTextPx": 7.627462014631401,
+              "minimumProjectedEdgeTextPx": 6.779966235227913,
+              "minimumProjectedNodeText": "speaks",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "user-mic",
+                "from": "user",
+                "to": "mic"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "theme": "light",
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "scrollWidth": 1920,
+              "scrollHeight": 1080,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1856,
+              "diagramWidth": 1826,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 60,
+                "diagramChromePx": 84,
+                "svgPx": 847,
+                "cardsPx": 0,
+                "viewBoxHeight": 824
+              },
+              "viewBoxWidth": 1777,
+              "minimumProjectedNodeTextPx": 8,
+              "minimumProjectedNonEdgeTextPx": 9,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "speaks",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "user-mic",
+                "from": "user",
+                "to": "mic"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "theme": "light",
+              "innerWidth": 2048,
+              "innerHeight": 1320,
+              "scrollWidth": 2048,
+              "scrollHeight": 1320,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1920,
+              "diagramWidth": 1870,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 68,
+                "diagramChromePx": 94,
+                "svgPx": 867,
+                "cardsPx": 0,
+                "viewBoxHeight": 824
+              },
+              "viewBoxWidth": 1777,
+              "minimumProjectedNodeTextPx": 8,
+              "minimumProjectedNonEdgeTextPx": 9,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "speaks",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "user-mic",
+                "from": "user",
+                "to": "mic"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 44,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            }
+          ]
         },
         "captures": {
           "status": "not-requested",
@@ -375,36 +1077,19 @@
         "sidecars": {
           "receipt": "speak-or-no-speak.architecture.browser-check.json",
           "files": []
-        },
-        "error": "Chrome DevTools read pipe failed: stream ended\nChrome process: still running.\nChrome stderr:\nshpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/6e43855e-e910-4906-8402-9d334f18c422.dmp: Operation not permitted (1)\n[1031/084607.728211:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16d7e8000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.735481:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/f2c4e7d6-bde4-4d87-8c31-f0f9b4fe2479.dmp: Operation not permitted (1)\nFailed to initialize sandbox.[1031/084607.782804:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16cf98000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.790935:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/5e0effba-00ca-46a4-9cab-c36cc576472e.dmp: Operation not permitted (1)\nFailed to initialize sandbox.[1031/084607.951122:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16dcf4000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.958972:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/c36cc805-2e02-4cca-a561-6be514c0aa92.dmp: Operation not permitted (1)\nFailed to initialize sandbox.Failed to initialize sandbox.[1031/084607.973582:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16ce2c000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.981535:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/80d3fe11-64bc-4d93-b254-b8050cefa7bf.dmp: Operation not permitted (1)\n[1031/084607.981762:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16b89c000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.988656:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/b3786381-6226-4693-b373-99db6f223372.dmp: Operation not permitted (1)\nTrying to load the allocator multiple times. This is *not* supported.\n[79470:320221672:1031/084608.040224:ERROR:content/browser/gpu/gpu_process_host.cc:1044] GPU process exited unexpectedly: exit_code=6\n[79470:320221672:1031/084608.041908:ERROR:content/browser/network_service_instance_impl.cc:652] Network service crashed or was terminated, restarting service.\nFailed to initialize sandbox.[1031/084608.045879:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f650000, 0x8000): (os/kern) invalid address (1)\nFailed to initialize sandbox.sandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.sandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.Failed to initialize sandbox.[1031/084608.053526:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/037733a1-498c-48fd-a852-0445f24b8e2e.dmp: Operation not permitted (1)\n[1031/084608.053690:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16d810000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.061281:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/61f62555-2ec4-4f79-8597-8ac7ff92a640.dmp: Operation not permitted (1)\n[1031/084608.061432:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f77c000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.068685:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/a02bd5b1-1a7f-4a72-8b23-94c32748097a.dmp: Operation not permitted (1)\n[1031/084608.068923:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16bb48000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.076593:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/00f877e5-4e13-4e96-9576-46d504adc1da.dmp: Operation not permitted (1)\n[1031/084608.076829:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16b998000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.084855:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/4e11bace-a1de-4440-ac9c-40d1577a23bb.dmp: Operation not permitted (1)\nFailed to initialize sandbox.[1031/084608.086886:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16bc50000, 0x8000): (os/kern) invalid address (1)\n[79470:320221672:1031/084608.091404:ERROR:content/browser/network_service_instance_impl.cc:652] Network service crashed or was terminated, restarting service.\n[79470:320221672:1031/084608.093027:ERROR:content/browser/gpu/gpu_process_host.cc:1044] GPU process exited unexpectedly: exit_code=6\n[1031/084608.094266:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/4a0bed0d-8324-4c0d-bd24-659b701350b5.dmp: Operation not permitted (1)\nsandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.[1031/084608.100199:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16dc88000, 0x8000): (os/kern) invalid address (1)\nsandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.Failed to initialize sandbox.[1031/084608.108262:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/7024931a-9cac-4253-8dbe-e4158e73b964.dmp: Operation not permitted (1)\n[1031/084608.108512:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f0e4000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.116619:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/e6098f88-89e4-4943-a36f-6c13687b7c78.dmp: Operation not permitted (1)\n[1031/084608.116873:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16d7d8000, 0x8000): (os/kern) invalid address (1)\n[79470:320221672:1031/084608.118029:ERROR:content/browser/network_service_instance_impl.cc:652] Network service crashed or was terminated, restarting service.\n[79470:320221672:1031/084608.118878:ERROR:content/browser/gpu/gpu_process_host.cc:1044] GPU process exited unexpectedly: exit_code=6\n[79470:320221672:1031/084608.118887:FATAL:content/browser/gpu/gpu_data_manager_impl_private.cc:389] GPU process isn't usable. Goodbye.\n[1031/084608.124753:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/c348cbb2-178e-49ad-a045-49a1f7f66456.dmp: Operation not permitted (1)\n[1031/084608.125261:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f884000, 0x8000): (os/kern) invalid address (1)\nsandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.[1031/084608.322840:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/5b17021c-19d4-4138-ae1d-4792b5040360.dmp: Operation not permitted (1)\n[1031/084608.324130:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f3ac000, 0x8000): (os/kern) invalid address (1)\nChrome transport: Node v26.7.0, libuv 1.52.1, darwin; pid=79470, exitCode=null, signalCode=null.\nChrome read pipe: readable=false, ended=true, destroyed=false, receivedBytes=1328, messages=3, bufferedBytes=0.\nChrome write pipe: writable=true, ended=false, destroyed=false, completedWrites=3, writtenBytes=255, bufferedBytes=0."
+        }
       }
     }
   },
-  "diagnostics": [
-    {
-      "code": "viewer/browser-check-runtime",
-      "severity": "error",
-      "message": "browser-check could not complete its Chrome inspection.",
-      "subject": {
-        "artifact": "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/speak-or-no-speak.architecture.html"
-      },
-      "evidence": {
-        "reason": "Chrome DevTools read pipe failed: stream ended\nChrome process: still running.\nChrome stderr:\nshpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/6e43855e-e910-4906-8402-9d334f18c422.dmp: Operation not permitted (1)\n[1031/084607.728211:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16d7e8000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.735481:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/f2c4e7d6-bde4-4d87-8c31-f0f9b4fe2479.dmp: Operation not permitted (1)\nFailed to initialize sandbox.[1031/084607.782804:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16cf98000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.790935:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/5e0effba-00ca-46a4-9cab-c36cc576472e.dmp: Operation not permitted (1)\nFailed to initialize sandbox.[1031/084607.951122:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16dcf4000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.958972:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/c36cc805-2e02-4cca-a561-6be514c0aa92.dmp: Operation not permitted (1)\nFailed to initialize sandbox.Failed to initialize sandbox.[1031/084607.973582:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16ce2c000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.981535:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/80d3fe11-64bc-4d93-b254-b8050cefa7bf.dmp: Operation not permitted (1)\n[1031/084607.981762:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16b89c000, 0x8000): (os/kern) invalid address (1)\n[1031/084607.988656:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/b3786381-6226-4693-b373-99db6f223372.dmp: Operation not permitted (1)\nTrying to load the allocator multiple times. This is *not* supported.\n[79470:320221672:1031/084608.040224:ERROR:content/browser/gpu/gpu_process_host.cc:1044] GPU process exited unexpectedly: exit_code=6\n[79470:320221672:1031/084608.041908:ERROR:content/browser/network_service_instance_impl.cc:652] Network service crashed or was terminated, restarting service.\nFailed to initialize sandbox.[1031/084608.045879:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f650000, 0x8000): (os/kern) invalid address (1)\nFailed to initialize sandbox.sandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.sandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.Failed to initialize sandbox.[1031/084608.053526:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/037733a1-498c-48fd-a852-0445f24b8e2e.dmp: Operation not permitted (1)\n[1031/084608.053690:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16d810000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.061281:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/61f62555-2ec4-4f79-8597-8ac7ff92a640.dmp: Operation not permitted (1)\n[1031/084608.061432:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f77c000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.068685:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/a02bd5b1-1a7f-4a72-8b23-94c32748097a.dmp: Operation not permitted (1)\n[1031/084608.068923:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16bb48000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.076593:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/00f877e5-4e13-4e96-9576-46d504adc1da.dmp: Operation not permitted (1)\n[1031/084608.076829:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16b998000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.084855:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/4e11bace-a1de-4440-ac9c-40d1577a23bb.dmp: Operation not permitted (1)\nFailed to initialize sandbox.[1031/084608.086886:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16bc50000, 0x8000): (os/kern) invalid address (1)\n[79470:320221672:1031/084608.091404:ERROR:content/browser/network_service_instance_impl.cc:652] Network service crashed or was terminated, restarting service.\n[79470:320221672:1031/084608.093027:ERROR:content/browser/gpu/gpu_process_host.cc:1044] GPU process exited unexpectedly: exit_code=6\n[1031/084608.094266:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/4a0bed0d-8324-4c0d-bd24-659b701350b5.dmp: Operation not permitted (1)\nsandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.[1031/084608.100199:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16dc88000, 0x8000): (os/kern) invalid address (1)\nsandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.Failed to initialize sandbox.[1031/084608.108262:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/7024931a-9cac-4253-8dbe-e4158e73b964.dmp: Operation not permitted (1)\n[1031/084608.108512:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f0e4000, 0x8000): (os/kern) invalid address (1)\n[1031/084608.116619:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/e6098f88-89e4-4943-a36f-6c13687b7c78.dmp: Operation not permitted (1)\n[1031/084608.116873:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16d7d8000, 0x8000): (os/kern) invalid address (1)\n[79470:320221672:1031/084608.118029:ERROR:content/browser/network_service_instance_impl.cc:652] Network service crashed or was terminated, restarting service.\n[79470:320221672:1031/084608.118878:ERROR:content/browser/gpu/gpu_process_host.cc:1044] GPU process exited unexpectedly: exit_code=6\n[79470:320221672:1031/084608.118887:FATAL:content/browser/gpu/gpu_data_manager_impl_private.cc:389] GPU process isn't usable. Goodbye.\n[1031/084608.124753:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/c348cbb2-178e-49ad-a045-49a1f7f66456.dmp: Operation not permitted (1)\n[1031/084608.125261:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f884000, 0x8000): (os/kern) invalid address (1)\nsandbox initialization failed: Operation not permitted\nFailed to initialize sandbox.[1031/084608.322840:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:153] open /Users/karin/Library/Application Support/Google/Chrome/Crashpad/new/5b17021c-19d4-4138-ae1d-4792b5040360.dmp: Operation not permitted (1)\n[1031/084608.324130:WARNING:third_party/crashpad/crashpad/util/process/process_memory_mac.cc:94] mach_vm_read(0x16f3ac000, 0x8000): (os/kern) invalid address (1)\nChrome transport: Node v26.7.0, libuv 1.52.1, darwin; pid=79470, exitCode=null, signalCode=null.\nChrome read pipe: readable=false, ended=true, destroyed=false, receivedBytes=1328, messages=3, bufferedBytes=0.\nChrome write pipe: writable=true, ended=false, destroyed=false, completedWrites=3, writtenBytes=255, bufferedBytes=0."
-      },
-      "supportedFixes": [
-        "resolve the reported Chrome inspection error, then rerun browser-check"
-      ]
-    }
-  ],
+  "diagnostics": [],
   "evidence": {
-    "receipt": "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/speak-or-no-speak.architecture.finalize.json",
-    "summaryReceipt": "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/speak-or-no-speak.architecture.finalize-summary.json",
-    "browserCheckReceipt": "/Users/karin/_programming/speak-or-no-speak/docs/archify/architecture-speak-or-no-speak-20261031-083424/speak-or-no-speak.architecture.browser-check.json"
+    "receipt": "/Users/karin/_programming/speak-or-no-speak/docs/archify/speak-or-no-speak.architecture.finalize.json",
+    "summaryReceipt": "/Users/karin/_programming/speak-or-no-speak/docs/archify/speak-or-no-speak.architecture.finalize-summary.json",
+    "browserCheckReceipt": "/Users/karin/_programming/speak-or-no-speak/docs/archify/speak-or-no-speak.architecture.browser-check.json"
   },
   "visualReview": "not-requested",
-  "failedStage": "browser-check",
-  "finishedAt": "2026-10-31T07:46:08.344Z",
-  "durationMs": 980,
+  "finishedAt": "2026-11-04T14:31:32.690Z",
+  "durationMs": 1404,
   "update": {
     "status": "unavailable",
     "installedVersion": null,

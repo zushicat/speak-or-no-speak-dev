@@ -36,6 +36,13 @@ the **why** and the **how to tune**.
 | `noAecBargeInConfirmMs` (300) | The wider barge-in confirm used when AEC is inactive — the extra margin against the agent's own leaked voice. |
 | `noAecRmsFactor` (2) | Without AEC, a speech frame must also be **louder than 2× the rolling mean rms of the last second of agent-only playback** — a TTS-leakage guard that statistical confirmation alone cannot provide. |
 | `modelTimeoutMs` (300) | Max wait for the semantic turn model before failing open — bounds how long the model can *hold* a turn. |
+| `echoGate.correlationThreshold` (0.75) | WP-E3 (default **off**, `echoGate.enabled`): a frame correlating ≥ this against the recent agent-reference audio is classified as echo *regardless of its rms* — the loud-TTS case the `noAecRmsFactor` gate misses. Measured on real Chrome (AGC + room): real echo hovers near the threshold → ~50 % catch rate at 0.75; real user speech stays below (barge-in intact, 30/30 interrupts in the WP-E3 control). **Lower it only with calibration data** — the cost of a false positive is swallowed user speech. |
+| `echoGate.probeEveryFrames` (4) | Correlation probes per frame cadence; un-probed frames inherit the last verdict (echo bursts are contiguous). Raise to 8 if the CPU budget suffers (measured cost at 4: p95 0.102 ms/frame, budget 8 ms). |
+| `echoGate.maxDelayMs` (500) | The render→capture delay search range (loopback jitter + D/A–A/D + acoustic path). Widen only if your output chain is slower than ~500 ms. |
+| `echoGate.lagStride` (16 ≈ 1 ms) | Budget knob for the delay-search resolution. |
+| `echoGate.suppressOnset` (false) | Phase 2 (opt-in): also reject echo in the READY state. Default off — a correlation false positive must never swallow real user speech un-armed. |
+| `voiceGate.threshold` (0.8) | WP-E4 (default **off**, `voiceGate.enabled`): cosine similarity vs the agent voice profile above which a completed turn is dropped (suppression, R7). Measured separation: same-voice 0.945 · different-voice 0.393. Raise it to drop fewer turns (safer for users who resemble the agent voice); lower only with calibration data. |
+| `voiceGate.profileUrl` / `modelUrl` | The committed profile JSON (`src/gate/agent-voice-profile.json`, built offline via `scripts/build-agent-voice-profile.mjs`) and the speaker-embedding ONNX (gitignored `/vendor/`, SmartTurnModel-style manual download). Bundle your own profile for your agent's voice. |
 
 ## 14.3 The 32 ms recalibration story
 
@@ -63,7 +70,9 @@ calibration fixtures ([§16.5](16-build-test-publish.md#165-the-replay-harness-a
 | Feels laggy at turn end | `redemptionMs` ↓ (e.g. 500) | rely on the adaptive policy instead of forcing it low | hesitant speakers get cut off — check `stats.interiorPauses` |
 | Speaker gets cut off mid-thought | `redemptionMs` ↑ (e.g. 800) or enable Smart Turn ([Chapter 12](12-smart-turn.md)) | `shortPauseMs` ↑ so hesitation opens PAUSE earlier | turn-end latency grows |
 | Agent interrupt feels slow | `bargeInConfirmFrames` ↓ (e.g. 4–5) | only with AEC active | without AEC this invites echo false-positives |
-| False interrupts from the agent's own voice (no AEC) | keep `noAecBargeInConfirmMs` (300) | raise `noAecRmsFactor` (e.g. 3) | very quiet users may not pass the rms gate |
+| False interrupts from the agent's own voice (no AEC) | **route the agent audio** (`createAgentAudioRoute`, [§5.4a](05-api-reference.md#54a-createagentaudiorouteoptions)) — measured 0 false starts/interrupts with the route or the `"all"` scope | keep `noAecBargeInConfirmMs` (300); the coherence echo gate (`echoGate: { enabled: true }`) halves the worst-case residual | very quiet users may not pass the rms gate; lowering `echoGate.correlationThreshold` without calibration risks swallowed speech |
+| Kiosk / IVR (barge-in unwanted) | `halfDuplex: true` | headphones + OS AEC ([§6.10](06-agent-integration.md#610-os-level-echo-cancellation)) | no barge-in while the agent talks — by design |
+| Barge-in feels slow although AEC works | declare the route (`setAgentAudioRouted(true)`) or `strictGating: "off"` | check `degraded.aecScope` first — `"all"` already exempts | only safe when cancellation is actually working |
 | Game avatar (fast commands) | `minSpeechMs` ↓ (e.g. 150) **and** `onsetConfirmFrames` ↓ (e.g. 6) | — | more cough/click sensitivity — that is the trade |
 | Long dictation sessions | `maxTurnMs` ↑ (e.g. 60000) | — | memory: turn audio accumulates in RAM |
 

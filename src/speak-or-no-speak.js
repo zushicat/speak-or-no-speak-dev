@@ -2,9 +2,10 @@
  * `SpeakOrNoSpeak` — the public facade (WP3 §3.5, master plan §4.1).
  *
  * Wires a {@link VadEngine} (default: Silero VAD adapter) to the pure
- * `TurnDetector` and exposes the five public members: `start`, `stop`,
- * `setAgentSpeaking`, `state`, `degraded`. Events: `onSpeechStart`,
- * `onTurnEnd`, `onInterrupt`, `onLevel`, `onError` (from options).
+ * `TurnDetector` and exposes the public members: `start`, `stop`,
+ * `setAgentSpeaking`, `setAgentAudioRouted`, `state`, `degraded`. Events:
+ * `onSpeechStart`, `onTurnEnd`, `onInterrupt`, `onLevel`, `onError` (from
+ * options).
  *
  * ### Agent integration contract (rule 3 — read this, app authors!)
  * While your app produces audio output (TTS etc.), call
@@ -19,7 +20,9 @@
 
 import { SileroVadAdapter } from "./vad/silero-vad-adapter.js";
 import { EnergyVad } from "./vad/energy-vad.js";
+import { AEC_SCOPE, strictGatingActive } from "./vad/aec-scope.js";
 import { TurnDetector } from "./turn/turn-detector.js";
+import { AgentVoiceGate } from "./gate/agent-voice-gate.js";
 import { DEFAULTS, mergeOptions } from "./config.js";
 import { ERROR_CODES, SpeakError } from "./errors.js";
 
@@ -45,15 +48,74 @@ export async function createSpeakOrNoSpeak(options = {}) {
     thresholds: opts.thresholds,
     debug: opts.debug,
     turnModel: opts.turnModel, // WP8: optional semantic end-of-turn model
+    echoGate: opts.echoGate,   // WP-E3: coherence echo gate (default off, D9)
+    halfDuplex: opts.halfDuplex, // WP-E5: M6 escape hatch (default off)
   });
 
   let started = false;
+  /**
+   * D5/D6: the app declares "my agent audio plays through a cancelable route"
+   * (see `setAgentAudioRouted`). Feeds the stricter-gating rule; reset on stop().
+   */
+  let agentAudioRouted = false;
+  /** WP-E3: unsubscribe handle for the echo-reference feed (setAgentAudioReference). */
+  let echoRefUnsubscribe = null;
+  /**
+   * WP-E4 (D9, stretch): the agent-voice-profile gate — default OFF. When
+   * enabled, completed turns are scored against the agent voice profile and
+   * agent-similar turns are dropped (suppression, never a hard gate; R7).
+   * Fail-open: any gate error emits the turn.
+   */
+  const voiceGate = opts.voiceGate?.enabled
+    ? (opts.voiceGate.gate ?? new AgentVoiceGate(opts.voiceGate))
+    : null;
+  /** order-preserving queue for async turn-end gating */
+  let turnEndChain = Promise.resolve();
+  /** one-time voice-gate warning flag */
+  let voiceGateWarned = false;
+  /** WP-E4: the voice gate's frame-level hook is consulted while armed (or
+   *  with suppressOnset, also in READY) — idle sessions skip scoring. */
+  const suppressOnset = opts.echoGate?.suppressOnset ?? false;
+
+  /**
+   * The engine's honest AEC scope (WP-E1). Engines that carry `aecScope`
+   * (Silero adapter + energy engine, post WP-E1) report it directly; injected
+   * legacy engines without it report "unknown" — we cannot verify what they
+   * cancel, and D3/D5 make "unknown" the safe default.
+   * @private
+   */
+  const scopeOf = (eng) => {
+    if (eng && typeof eng.aecScope === "string") return eng.aecScope;
+    return AEC_SCOPE.UNKNOWN;
+  };
+
+  /**
+   * Apply the D5 stricter-gating rule to the detector (WP-E1 §1.5.3).
+   * Engines without `aecScope` keep the WP5 back-compat rule
+   * (`aecDegraded === true`) so injected custom engines behave unchanged.
+   * @private
+   */
+  const applyNoAecMode = () => {
+    if (engine && typeof engine.aecScope === "string") {
+      detector.noAecMode = strictGatingActive(
+        engine.aecScope,
+        agentAudioRouted,
+        opts.strictGating
+      );
+    } else {
+      detector.noAecMode = engine?.aecDegraded === true;
+    }
+  };
 
   /** Wire an engine's callbacks into detector + user options. @private */
   const wireEngine = (eng) => {
     eng.onFrame((frame) => {
       detector.onFrame(frame);
       if (typeof opts.onLevel === "function") opts.onLevel(frame.rms);
+      // WP-E4: feed the voice gate's rolling window (scoring runs only while
+      // the detector consumes verdicts). Guarded: injected gates may be
+      // turn-level-only.
+      voiceGate?.feed?.(frame.frame, detector.agentSpeaking || suppressOnset);
     });
     eng.onError((err) => opts.onError?.(err));
   };
@@ -69,8 +131,34 @@ export async function createSpeakOrNoSpeak(options = {}) {
     async start() {
       if (started) return;
       detector.onSpeechStart = () => opts.onSpeechStart?.();
-      detector.onTurnEnd = (event) => opts.onTurnEnd?.(event);
+      detector.onTurnEnd = (event) => {
+        if (!voiceGate) {
+          opts.onTurnEnd?.(event);
+          return;
+        }
+        // WP-E4: score the turn against the agent voice profile; drop
+        // agent-similar turns. Serialized so async scoring keeps event order.
+        turnEndChain = turnEndChain.then(async () => {
+          try {
+            const verdict = await voiceGate.scoreTurn(event.audio);
+            if (verdict?.isAgent) return; // suppressed silently (R7)
+            opts.onTurnEnd?.(event);
+          } catch (err) {
+            // fail-open: the gate never loses a user turn
+            if (!voiceGateWarned) {
+              voiceGateWarned = true;
+              opts.onError?.({
+                code: ERROR_CODES.AUDIO_PIPELINE,
+                message: `Voice gate failed (${err?.message ?? err}) — turns are emitted ungated.`,
+              });
+            }
+            opts.onTurnEnd?.(event);
+          }
+        });
+      };
       detector.onInterrupt = (info) => opts.onInterrupt?.(info);
+      // WP-E4: register the voice gate's frame-level hook (sync, fail-open).
+      detector.setVoiceGate(voiceGate ? { isAgentVoice: () => voiceGate.isAgentVoiceSync() } : null);
 
       try {
         wireEngine(engine);
@@ -94,9 +182,11 @@ export async function createSpeakOrNoSpeak(options = {}) {
         await engine.start();
       }
       started = true;
-      // WP5 §5.4: mic track without active echo cancellation → stricter
-      // barge-in gating (more confirm frames + rms-vs-playback-baseline).
-      detector.noAecMode = engine.aecDegraded === true;
+      // WP-E1 D5 (replaces the WP5 §5.4 plain `engine.aecDegraded` read): the
+      // mic's honest AEC scope × the agent-audio route × the strictGating
+      // option decide whether the detector runs its stricter barge-in gating
+      // (more confirm frames + rms-vs-playback-baseline).
+      applyNoAecMode();
     },
 
     /** Stop the engine and release the microphone. Idempotent. */
@@ -105,6 +195,12 @@ export async function createSpeakOrNoSpeak(options = {}) {
       engine.stop();
       detector.reset();
       started = false;
+      // D5: the route declaration is per-session — a fresh start re-applies it.
+      agentAudioRouted = false;
+      // WP-E3: the reference feed is per-session too (its tap dies with the route).
+      if (echoRefUnsubscribe) { echoRefUnsubscribe(); echoRefUnsubscribe = null; }
+      // WP-E4: no stale window verdicts into a fresh session.
+      voiceGate?.resetWindow?.();
     },
 
     /**
@@ -116,6 +212,39 @@ export async function createSpeakOrNoSpeak(options = {}) {
     },
 
     /**
+     * WP-E1 D5/D6: declare whether the app's agent audio currently plays
+     * through a cancelable route (`createAgentAudioRoute()` — WP-E2). While a
+     * route is active, "unknown"/"remote-only" scopes no longer force the
+     * stricter barge-in gating (Chromium's AEC then has a real reference).
+     * Reset by `stop()`.
+     * @param {boolean} active
+     */
+    setAgentAudioRouted(active) {
+      agentAudioRouted = active === true;
+      if (started) applyNoAecMode();
+    },
+
+    /**
+     * WP-E3: register the agent-audio route as the ECHO REFERENCE source —
+     * its render tap feeds `detector.pushEchoReference` (data for the
+     * correlation gate). Accepts a route-like object exposing
+     * `onReferenceFrame(cb)`; pass the route created by
+     * `createAgentAudioRoute()`. The (gating-policy) `setAgentAudioRouted`
+     * flag and this (data) feed are independent — either without the other
+     * leaves the gate a no-op. Unsubscribed by `stop()`.
+     * @param {{ onReferenceFrame: (cb: (samples: Float32Array) => void) => () => void }|null} reference
+     */
+    setAgentAudioReference(reference) {
+      if (echoRefUnsubscribe) { echoRefUnsubscribe(); echoRefUnsubscribe = null; }
+      if (reference && typeof reference.onReferenceFrame === "function") {
+        const srcRate = reference.context?.sampleRate ?? 16000;
+        echoRefUnsubscribe = reference.onReferenceFrame((samples) => {
+          try { detector.pushEchoReference(samples, srcRate); } catch { /* gate must never break detection */ }
+        });
+      }
+    },
+
+    /**
      * Mirrors the detector state — authoritative, because discarded turns
      * (too-short speech) return to "ready" without emitting an event.
      * @returns {ModuleState}
@@ -124,11 +253,17 @@ export async function createSpeakOrNoSpeak(options = {}) {
       return started ? detector.state : "idle";
     },
 
-    /** @returns {{ aec: boolean, engine: "silero" | "energy" }} */
+    /**
+     * Degrade report (WP-E1 D2): `aec` keeps its meaning (true = no usable
+     * cancellation = scope "none") for back-compat; `aecScope` is the honest
+     * scope label ("all" | "remote-only" | "unknown" | "none").
+     * @returns {{ aec: boolean, engine: "silero" | "energy", aecScope: import("./types.js").AecScope }}
+     */
     get degraded() {
       return {
         aec: engine.aecDegraded ?? false,
         engine: engineKind === "energy" ? "energy" : "silero",
+        aecScope: scopeOf(engine),
       };
     },
 
@@ -138,6 +273,10 @@ export async function createSpeakOrNoSpeak(options = {}) {
     },
     get _engine() {
       return engine;
+    },
+    /** WP-E4: the voice gate instance (null when disabled) — stats + tests */
+    get _voiceGate() {
+      return voiceGate;
     },
   };
 

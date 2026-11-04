@@ -4,10 +4,15 @@
 
 Terms used throughout this documentation, in the sense they are used here.
 
-**AEC (acoustic echo cancellation)** — the browser's removal of audio *it
-plays in the same tab* from the microphone signal. Requested via
-`getUserMedia({ audio: { echoCancellation: true } })`. Cancels your TTS, not
-other apps' audio ([§6.6](06-agent-integration.md#66-echo-cancellation-scope)).
+**AEC (acoustic echo cancellation)** — the browser's removal of audio *it can
+reference* from the microphone signal. Requested via
+`getUserMedia({ audio: { echoCancellation: … } })`. What is referenceable is
+per-browser: `RTCPeerConnection` audio always; same-page playback only with
+the `"all"` scope + OS permission (Chromium) or via the
+[agent-audio route](06-agent-integration.md#66-echo-cancellation-scope)
+(Safari's system AEC covers it by default); **never other apps' audio unless
+the OS-level AEC is enabled**. The module reports the honest verdict as
+`degraded.aecScope` (`"all" | "remote-only" | "unknown" | "none"`).
 
 **AGC / NS** — automatic gain control / noise suppression: the two other
 standard browser mic-track processors this module enables by default.

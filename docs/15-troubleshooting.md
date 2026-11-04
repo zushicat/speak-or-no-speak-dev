@@ -42,6 +42,8 @@ returns a ready-made UI sentence for every code
 | `cdn-unavailable` | fatal* | neither CDN scripts (`window.vad`) nor npm import available → *energy fallback* |
 | `engine-load-failed` | fatal* | ORT/model/MicVAD load or start threw → *energy fallback* |
 | `no-aec` | warning | echo cancellation not active — stricter barge-in gating active |
+| `aec-scope-limited` | warning | AEC scope could not be verified (browser-decided `true`) — route agent audio via `createAgentAudioRoute()` or enable system-wide cancellation ([§6.6](06-agent-integration.md#66-echo-cancellation-scope)) |
+| `aec-scope-fallback` | warning | system-wide AEC unavailable (missing OS permission) — fell back to the browser default (one re-request; Chromium 479234114) |
 | `engine-fallback` | warning | running on the energy engine |
 | `audio-pipeline` | runtime | AudioContext/capture failure at runtime |
 | `vad-no-frames` | runtime | engine started but produced no frames within 5 s |
@@ -58,7 +60,10 @@ instead of failing the page.
 | `cdn-unavailable` | network/CDN blocked (VPN, offline, strict CSP) — allow `cdn.jsdelivr.net`, or serve a local `/vendor/` mirror ([§11.5](11-runtime-libraries.md#115-offline-and-blocked-cdn-operation)) |
 | `vad-no-frames` | engine started but no audio arrived — reload the page |
 | `no-aec` warning | platform without AEC or forced off — expect stricter gating; headphones recommended |
-| false interrupts from loud speakers | without AEC the browser can only gate barge-in statistically — lower speaker volume or use headphones ([§6.6](06-agent-integration.md#66-echo-cancellation-scope)) |
+| `aec-scope-limited` warning | `degraded.aecScope === "unknown"`: the browser reports `echoCancellation: true` but its scope is unverifiable — on Chromium this is exactly the state where `speechSynthesis`/same-page audio leaks into the mic; route agent audio via `createAgentAudioRoute()` ([§5.4a](05-api-reference.md#54a-createagentaudiorouteoptions)) or enable the OS permission + `"all"` scope. Safari users can ignore it (empirically system-wide, [§6.6](06-agent-integration.md#66-echo-cancellation-scope)) |
+| `aec-scope-fallback` warning | the OS *Screen & System Audio Recording* permission is missing (macOS/Chromium) — grant it and reload; without it the module fell back to the browser default and reports `"unknown"` ([§6.10](06-agent-integration.md#610-os-level-echo-cancellation)) |
+| the mic hears the agent's TTS | check `degraded.aecScope`: `"unknown"` on Chromium → route the agent audio (the demo's "audio buffer (routed)" source shows the fix); `"none"` → AEC is off (stricter gating active); `"all"` → should not happen (measured clean) — file a report |
+| false interrupts from loud speakers | without AEC the browser can only gate barge-in statistically — route the agent audio, lower speaker volume, use headphones ([§6.6](06-agent-integration.md#66-echo-cancellation-scope)), or set `halfDuplex: true` when barge-in is unwanted |
 | Safari hangs at start | the adapter auto-retries with the ScriptProcessor path (check `sons._engine.processorTypeUsed`); the mic needs a user gesture — call `start()` from a click ([§10.4](10-vad-engines.md#104-the-audioworklet-hang-and-the-scriptprocessor-fallback)) |
 | stale demo behavior after editing `demo/main.js` | bump the `?v=` cache-bust query in `demo/index.html` (dev server sends no `Cache-Control` header) |
 | turns split on hesitant speech | enable Smart Turn ([Chapter 12](12-smart-turn.md)) or widen `redemptionMs` ([§14.4](14-configuration-tuning.md#144-tuning-recipes)) |

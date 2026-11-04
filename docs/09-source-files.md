@@ -12,13 +12,18 @@ repository layout first, then the files grouped by directory.
 demo/                 demo page (index.html, main.js, stt-stub-server.py, assets/)
 src/                  the module (facade, VAD adapters, turn state machine)
   vad/                engine interface + Silero adapter + energy fallback
+                      + aec-scope.js (AEC scope negotiation/classification, rev-8.1 WP-E1)
   turn/               the pure state machine + ring buffer
+                      + echo-correlation.js (coherence echo gate, WP-E3)
   turn-model/         optional semantic end-of-turn model (+ its feature pipeline)
   stt/                transcription plug point (interface + example)
+  agent-audio/        echo-reference-route.js — cancelable agent audio (WP-E2)
+  gate/               agent-voice-gate.js + kaldi-fbank.js — voice-profile gate (WP-E4, default off)
 test/                 node --test suite, replay harness, calibration recordings
 scripts/              build-bundle.mjs (the single-file bundle builder)
+                      build-agent-voice-profile.mjs (voice-gate profile, WP-E4)
 build/                prebuilt ESM + IIFE bundles (+ sourcemaps)
-vendor/               gitignored local assets (Smart Turn weights, optional CDN mirror)
+vendor/               gitignored local assets (Smart Turn weights, speaker-embedding model, optional CDN mirror)
 plans/                implementation plans & work packages (not published)
 docs/                 this documentation (+ the archify architecture webapp)
 ```
@@ -131,6 +136,14 @@ the encoder lives in `src/` and its tests in `test/util/`.
   [Chapter 10](10-vad-engines.md).
 - **`energy-vad.js`** — the degraded fallback engine; detailed in
   [Chapter 10](10-vad-engines.md).
+- **`aec-scope.js`** (rev-8.1 WP-E1) — the honest AEC-scope machinery:
+  `AEC_CONSTRAINTS` (`{ideal:"all"}`, D1 — the single constraint source used
+  by `DEFAULTS.mic` and both engines), `classifyAecScope(settings)`
+  (D2/D3: `"all" | "remote-only" | "unknown" | "none"`, value-based, never
+  browser-sniffing), `endedFallbackConstraints` (D4's one-time fallback
+  re-request), `strictGatingActive` (D5's scope × route × override rule).
+  Pure, Node-tested; the adapter exposes `engine.aecScope` and keeps
+  `aecDegraded` derived (`scope === "none"`).
 
 ## 9.9 `src/turn/` — the detection core
 
@@ -141,13 +154,19 @@ the encoder lives in `src/` and its tests in `test/util/`.
   optional `turnModel` (fail-open), and records debug traces
   (`debug: true` → `traces`, last 100 transitions). Private state is reset by
   `reset()`; `pause()`/`resume()` freeze accumulation without dropping the
-  ring buffer.
+  ring buffer. Rev-8.1 additions: the coherence echo gate
+  (`echoGate` options + `pushEchoReference`), the voice-gate frame hook
+  (`setVoiceGate`), and `halfDuplex` (M6 escape hatch — armed frames are
+  non-speech).
 - **`ring-buffer.js`** — fixed-capacity `Float32Array` ring buffer for the
   pre-speech pad: `push()` (frames longer than capacity keep only their last
   samples), `flush()` (chronological output + reset), `clear()`. The detector
   sizes the capacity as `preSpeechPadMs + onsetConfirmFrames × frameDuration`
   so confirmed onset frames are part of the flushed pad and word onsets are
   never clipped ([§7.9](07-detection-methods.md#79-turn-boundaries-and-guards)).
+- **`echo-correlation.js`** (rev-8.1 WP-E3) — pure normalized cross-correlation
+  of a mic frame against the agent-reference ring (strided delay search,
+  box-average decimation); the coherence echo gate's classifier.
 
 ## 9.10 `src/turn-model/` — the semantic model
 
@@ -178,6 +197,36 @@ the encoder lives in `src/` and its tests in `test/util/`.
   `Authorization: Bearer` and `X-Language` headers, expects
   `{ text, confidence? }` JSON back. Dev example by design — implement
   `SttAdapter` for any real backend.
+
+## 9.11a `src/agent-audio/` — cancelable agent audio (rev-8.1 WP-E2)
+
+- **`echo-reference-route.js`** — `createAgentAudioRoute({ audioContext?,
+  gain?, mode? })`: plays the app's agent voice through a local WebRTC
+  loopback (`MediaStreamDestination` → pc1 ⇄ pc2 → `<audio autoplay>`) so the
+  browser's AEC references it as *remote participant* audio; WebKit resolves
+  to **direct** mode (`resolveRouteMode`, D7 — measured: WebKit's loopback
+  gathers no ICE candidates). Contract: connect the source to `route.input`
+  ONLY, control volume on `route.gain.gain.value` (D8), create it inside the
+  mic-start gesture (R2), `stop()` is idempotent, `getReferenceNode()` feeds
+  the E3 echo gate. Failures throw `audio-pipeline` — the app keeps plain
+  playback ([§5.4a](05-api-reference.md#54a-createagentaudiorouteoptions)).
+
+## 9.11b `src/gate/` — the voice-profile gate (rev-8.1 WP-E4, default off)
+
+- **`agent-voice-gate.js`** — `AgentVoiceGate`: embeds turn/rolling-window
+  audio through a speaker-verification ONNX and compares against the agent
+  voice profile (cosine similarity, threshold 0.8); fail-open everywhere;
+  `similarityHistory`/`lastSimilarity` calibration telemetry. Pure helpers
+  exported: `cosineSimilarity`, `isAgentVoice`.
+- **`kaldi-fbank.js`** — kaldi-style fbank-80 feature extraction in pure JS
+  (povey window, pre-emphasis, HTK-mel) + per-utterance CMVN (REQUIRED for
+  voice separation — measured: 0.945 same-voice / 0.393 different-voice; raw
+  fbank is useless). Shared by the browser gate and the offline profile
+  builder.
+- **`agent-voice-profile.json`** — the committed 3.7 KB profile (built from
+  `demo/agent-voice-sample.wav` by
+  `scripts/build-agent-voice-profile.mjs`; the MODEL is gitignored
+  `/vendor/`).
 
 ## 9.12 `demo/` — the demo files
 

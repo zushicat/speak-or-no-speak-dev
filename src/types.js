@@ -45,11 +45,22 @@
 /**
  * Emitted for engine-level problems. Codes (final taxonomy lands in WP7):
  * `cdn-unavailable`, `mic-denied`, `mic-not-found`, `insecure-context`,
- * `vad-init-failed`, `vad-no-frames`, `no-aec` (warning — engine keeps running).
+ * `vad-init-failed`, `vad-no-frames`, `no-aec`, `aec-scope-limited`,
+ * `aec-scope-fallback` (warnings — the engine keeps running).
  *
  * @typedef {Object} EngineError
  * @property {string} code
  * @property {string} message
+ */
+
+/**
+ * Honest AEC scope label (WP-E1 D2/D3, from `src/vad/aec-scope.js`):
+ * what the browser actually cancels, as far as a page can verify.
+ * `"all"` = system-wide capture applied · `"remote-only"` = WebRTC remote
+ * audio only · `"unknown"` = browser-decided `true`, unverifiable from JS
+ * (the leaking Chromium default) · `"none"` = no usable cancellation.
+ *
+ * @typedef {"all"|"remote-only"|"unknown"|"none"} AecScope
  */
 
 /**
@@ -109,6 +120,47 @@
  * @property {(info: InterruptInfo) => void} [onInterrupt]  S3: barge-in while agent speaks
  * @property {(rms: number) => void} [onLevel]          per-frame loudness 0..1
  * @property {(e: EngineError) => void} [onError]       engine/mission errors
+ * @property {"auto"|"on"|"off"} [strictGating]         stricter barge-in gating override
+ *                                                      (WP-E1 D5; default "auto" = scope-aware rule:
+ *                                                      stricter on scope "none", or "unknown"/
+ *                                                      "remote-only" without an active agent-audio route)
+ * @property {Partial<EchoGateOptions>} [echoGate]      coherence echo gate (WP-E3, D9) —
+ *                                                      default OFF; see the EchoGateOptions typedef
+ * @property {Partial<VoiceGateOptions> & {gate?: any}} [voiceGate]
+ *                                                      agent-voice-profile gate (WP-E4, D9 stretch) —
+ *                                                      default OFF; drops agent-similar turns (suppression,
+ *                                                      R7); fail-open; `gate` injects a ready instance (tests)
+ * @property {boolean} [halfDuplex]                     WP-E5 (M6 escape hatch, default false): while the agent
+ *                                                      flag is armed, speech detection is suspended entirely —
+ *                                                      no barge-in/interrupts; for IVR-style flows
+ */
+
+/**
+ * WP-E4 agent-voice-profile gate options (D9 stretch) — default OFF.
+ * Defaults in src/config.js.
+ *
+ * @typedef {Object} VoiceGateOptions
+ * @property {boolean} enabled    master switch (default false)
+ * @property {number} threshold   cosine-similarity threshold (0.8; measured
+ *                                separation: same-voice 0.945 · different-voice 0.393)
+ * @property {string} profileUrl  the committed profile JSON
+ *                                (src/gate/agent-voice-profile.json — built offline)
+ * @property {string} modelUrl    the speaker-embedding ONNX (gitignored /vendor/)
+ */
+
+/**
+ * WP-E3 coherence echo gate options (D9) — correlation-based echo
+ * classification on top of AEC, default OFF. Defaults in src/config.js.
+ *
+ * @typedef {Object} EchoGateOptions
+ * @property {boolean} enabled                master switch (default false)
+ * @property {number} correlationThreshold    0.75 — corr ≥ this classifies echo
+ * @property {number} maxDelayMs              500 — render→capture delay search range
+ * @property {number} windowMs                250 — reference history the detector keeps
+ * @property {number} decimation              2 — search at 8 kHz effective
+ * @property {number} lagStride               16 — raw-sample lag step (1 ms @16 kHz, budget knob)
+ * @property {number} probeEveryFrames        4 — probe cadence; un-probed frames inherit the verdict
+ * @property {boolean} suppressOnset          false — phase 2: also reject echo in READY (opt-in)
  */
 
 /**
@@ -118,6 +170,11 @@
  * @property {() => Promise<void>} start
  * @property {() => void} stop
  * @property {(active: boolean) => void} setAgentSpeaking
+ * @property {(active: boolean) => void} setAgentAudioRouted
+ *        WP-E1 D5/D6: declare the agent audio plays through a cancelable route
+ *        (createAgentAudioRoute, WP-E2); feeds the stricter-gating rule; reset by stop()
+ * @property {(reference: { onReferenceFrame: (cb: (samples: Float32Array) => void) => () => void }|null) => void} setAgentAudioReference
+ *        WP-E3: register the route as the echo-reference data feed for the correlation gate
  * @property {ModuleState} state
- * @property {{ aec: boolean, engine: "silero" | "energy" }} degraded
+ * @property {{ aec: boolean, engine: "silero" | "energy", aecScope: AecScope }} degraded
  */

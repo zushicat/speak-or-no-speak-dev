@@ -4,6 +4,8 @@
  * @module config
  */
 
+import { AEC_CONSTRAINTS } from "./vad/aec-scope.js";
+
 /**
  * Default configuration. Every value traceable to master plan §4.3 or a WP
  * decision; frame-count thresholds are calibrated for Silero v5's 32 ms
@@ -14,13 +16,14 @@
  * @type {import("./types.js").SpeakOrNoSpeakOptions & { thresholds: import("./types.js").Thresholds }}
  */
 export const DEFAULTS = {
-  /** Browser AEC is the E1 echo-safety groundwork (plan §8). */
-  mic: {
-    channelCount: 1,
-    echoCancellation: true,
-    noiseSuppression: true,
-    autoGainControl: true,
-  },
+  /**
+   * Browser AEC constraints — WP-E1 D1: widest scope as an *ideal*
+   * (`{ideal:"all"}`), shared verbatim with the engines via
+   * `AEC_CONSTRAINTS` (src/vad/aec-scope.js). A user's primitive
+   * `mic.echoCancellation` (e.g. `false`) still replaces it (mergeOptions:
+   * primitive beats object).
+   */
+  mic: { ...AEC_CONSTRAINTS },
   thresholds: {
     /** frame "is speech" level (plan §4.3) */
     onsetSpeechThreshold: 0.6,
@@ -54,6 +57,45 @@ export const DEFAULTS = {
   },
   /** record state-transition traces on the detector */
   debug: false,
+  /**
+   * Stricter-gating override.
+   */
+  strictGating: "auto",
+  /**
+   * WP-E3 coherence echo gate (D9) — correlation-based echo classification,
+   * defense-in-depth ON TOP of AEC. Ships default-OFF; see
+   * src/turn/echo-correlation.js. `lagStride` (raw samples, 1 ms @16 kHz) is
+   * the CPU-budget knob for the delay search.
+   */
+  echoGate: {
+    enabled: false,            // master switch
+    correlationThreshold: 0.75,
+    maxDelayMs: 500,           // render→capture delay search range
+    windowMs: 250,             // reference history the detector must keep
+    decimation: 2,             // 16 kHz → 8 kHz effective search rate
+    lagStride: 16,             // raw-sample lag step (1 ms @16 kHz)
+    probeEveryFrames: 4,       // probe cadence; un-probed frames inherit the verdict
+    suppressOnset: false,      // phase 2: also reject echo in the READY state
+  },
+  /**
+   * WP-E4 (D9, stretch): agent-voice-profile gate — default OFF. Scores
+   * completed turns against the agent voice profile (built offline via
+   * scripts/build-agent-voice-profile.mjs) and drops agent-similar turns
+   * (suppression, R7); fail-open on any model error.
+   */
+  voiceGate: {
+    enabled: false,
+    threshold: 0.8, // measured separation: same-voice 0.945 · different-voice 0.393
+    profileUrl: "/src/gate/agent-voice-profile.json",
+    modelUrl: "/vendor/wespeaker_en_voxceleb_resnet34.onnx",
+  },
+  /**
+   * WP-E5 (M6 escape hatch): half-duplex mode — while the agent flag is
+   * armed, speech detection is suspended entirely (no barge-in, no
+   * interrupts). For IVR-style flows where barge-in is unwanted. Costs
+   * barge-in latency (∞ while armed — by design).
+   */
+  halfDuplex: false,
 };
 
 /**

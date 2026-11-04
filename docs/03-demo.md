@@ -85,10 +85,35 @@ Two design points worth understanding:
    robustness: the detector should *not* produce turns from a protest crowd.
    (`setAgentSpeaking(true)` would suppress turn events entirely — the opposite
    of what this row is for. See [Chapter 6](06-agent-integration.md).)
-2. **AEC may partially cancel it.** Because it is `<audio>` playback in the
-   same tab, browser echo cancellation may remove part of it from the mic
-   signal — that is exactly what AEC does. Append **`?noaec=1`** to the URL to
-   compare the no-AEC path ([§3.8](#38-url-parameters)).
+2. **What AEC actually cancels here is browser-dependent (measured).** This is
+   `<audio>` playback in the same tab: on Safari it is cancelled (system AEC);
+   on Chromium with the module's `"all"` scope + the OS permission it is
+   cancelled (system-wide capture); on Chromium *without* that scope the mic
+   hears it — the demo's simplified page shows the measured scope live
+   (`engine: … · aec scope: …`). Append **`?noaec=1`** to compare the no-AEC
+   path ([§3.8](#38-url-parameters)); see
+   [Chapter 6 §6.6](06-agent-integration.md#66-echo-cancellation-scope) for
+   the measured per-browser table.
+
+## 3.4a The simplified voice demo (`demo/demo-simplified-voice-iife-bundle.html`)
+
+The minimal AEC-experiment page (used for the rev-8.1 measurements):
+
+- Loads the pinned CDN bundle by default; **`?local=1`** swaps in the repo
+  build (`../build/speak-or-no-speak.iife.js`) so `src/` changes are testable
+  without a CDN push (note: the dev server's clean-URL redirect drops query
+  strings — use the extension-less URL `/demo/demo-simplified-voice-iife-bundle?local=1`).
+- **Voice source toggle** — `speechSynthesis` (cannot be routed; on Chromium
+  it leaks without the `"all"` scope + OS permission) vs **audio buffer
+  (routed)** — plays `demo/agent-voice-sample.wav` through
+  `createAgentAudioRoute()` (the route is created in the mic-start click,
+  gesture-scoped).
+- **AEC status line** — `(engine: … · aec scope: …)` after start, plus the
+  scope warnings.
+- URL params: **`?routemode=loopback|direct`** (forces the route mode),
+  **`?echogate=1`** (coherence echo gate, WP-E3), **`?strictgating=on|off`**
+  (gating override), **`?noaec=1`**, **`?voicegate=1`** (voice-profile gate,
+  WP-E4 — default off everywhere).
 
 ## 3.5 Smart Turn checkbox
 

@@ -8,14 +8,15 @@
  * @module errors
  */
 
-/** @typedef {"mic-denied"|"mic-not-found"|"insecure-context"|"cdn-unavailable"|"engine-load-failed"|"no-aec"|"audio-pipeline"|"vad-no-frames"|"engine-fallback"} ErrorCode */
+/** @typedef {"mic-denied"|"mic-not-found"|"insecure-context"|"cdn-unavailable"|"engine-load-failed"|"no-aec"|"aec-scope-limited"|"aec-scope-fallback"|"audio-pipeline"|"vad-no-frames"|"engine-fallback"} ErrorCode */
 
 /**
  * Stable error codes.
  *
  * Fatal (start fails): mic-denied, mic-not-found, insecure-context,
  * cdn-unavailable, engine-load-failed.
- * Warnings (engine keeps running): no-aec, engine-fallback.
+ * Warnings (engine keeps running): no-aec, aec-scope-limited,
+ * aec-scope-fallback, engine-fallback.
  * Runtime: audio-pipeline, vad-no-frames.
  *
  * @type {Record<string, ErrorCode>}
@@ -33,6 +34,10 @@ export const ERROR_CODES = {
   ENGINE_LOAD_FAILED: "engine-load-failed",
   /** echo cancellation not active on the mic track (warning — WP1/WP5) */
   NO_AEC: "no-aec",
+  /** AEC scope could not be verified — browser-decided `true` (warning — WP-E1 D3) */
+  AEC_SCOPE_LIMITED: "aec-scope-limited",
+  /** system-wide AEC unavailable → fell back to the browser default (warning — WP-E1 D4) */
+  AEC_SCOPE_FALLBACK: "aec-scope-fallback",
   /** the engine fell back to the energy VAD (warning — WP7 §7.1) */
   ENGINE_FALLBACK: "engine-fallback",
   /** AudioContext / capture pipeline failure at runtime */
@@ -76,6 +81,10 @@ export function humanMessage(code) {
       return "The speech engine failed to load — falling back to the energy-based engine (degraded accuracy).";
     case ERROR_CODES.NO_AEC:
       return "Warning: echo cancellation is not active on this microphone — stricter barge-in gating active; headphones recommended.";
+    case ERROR_CODES.AEC_SCOPE_LIMITED:
+      return "Warning: echo cancellation could not be verified on this microphone — agent audio may be picked up while the agent speaks. Route agent audio through createAgentAudioRoute() (see docs), or enable system-wide echo cancellation (Chrome: echoCancellation \"all\" + the OS Screen & System Audio Recording permission).";
+    case ERROR_CODES.AEC_SCOPE_FALLBACK:
+      return "Warning: system-wide echo cancellation was not available (missing OS permission) — fell back to the browser default.";
     case ERROR_CODES.ENGINE_FALLBACK:
       return "Warning: running on the energy-based fallback engine (degraded noise robustness).";
     case ERROR_CODES.AUDIO_PIPELINE:
