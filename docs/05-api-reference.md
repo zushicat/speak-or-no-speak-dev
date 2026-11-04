@@ -23,7 +23,8 @@ optional; fatal misconfiguration rejects with a `SpeakError` carrying a stable
 
 | Option | Type / default | Meaning |
 |---|---|---|
-| `mic` | `MediaTrackConstraints`, default AEC on | Merged **per key** over the defaults `{ channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true }` — e.g. `mic: { echoCancellation: false }` disables only AEC (activates stricter barge-in gating, [Chapter 6](06-agent-integration.md)) |
+| `mic` | `MediaTrackConstraints`, default widest AEC scope | Merged **per key** over the defaults `{ channelCount: 1, echoCancellation: { ideal: "all" }, noiseSuppression: true, autoGainControl: true }` (WP-E1 D1 — requests system-wide AEC as an *ideal*; never fails the request). E.g. `mic: { echoCancellation: false }` disables only AEC (activates stricter barge-in gating, [Chapter 6](06-agent-integration.md)) |
+| `strictGating` | `"auto" \| "on" \| "off"`, default `"auto"` | Stricter barge-in gating override (WP-E1 D5): `"auto"` = stricter when `degraded.aecScope` is `"none"`, or `"unknown"`/`"remote-only"` without an active agent-audio route; `"on"`/`"off"` force it |
 | `thresholds` | `Partial<Thresholds>`, merged over defaults | Detection thresholds — table in [§5.3](#53-thresholds) |
 | `engine` | `VadEngine` | Advanced: inject a custom engine (tests, experiments). Injecting one disables the automatic energy fallback unless you also pass `energyEngine` |
 | `energyEngine` | `VadEngine` | Advanced: replaces the default `EnergyVad` as the fallback target |
@@ -65,9 +66,45 @@ Rationale and tuning recipes: [Chapter 14](14-configuration-tuning.md).
 | `start()` → `Promise<void>` | Opens the mic and starts detection. Resolves when the first frame arrives; rejects on fatal errors ([§5.6](#56-error-codes--humanmessage)). May transparently degrade to the energy engine ([Chapter 15](15-troubleshooting.md)) |
 | `stop()` | Stops the engine, releases the mic, resets state. Idempotent |
 | `setAgentSpeaking(active)` | Arm/disarm barge-in mode while your app plays audio — [Chapter 6](06-agent-integration.md). **Always disarm** when your output stops |
+| `setAgentAudioRouted(active)` | Declare your agent audio plays through a cancelable route ([`createAgentAudioRoute`](#54a-createagentaudiorouteoptions) — WP-E2). While a route is active, an `"unknown"`/`"remote-only"` AEC scope no longer forces the stricter barge-in gating. Reset by `stop()` |
 | `state` → `"idle" \| "ready" \| "listening"` | `"idle"` = not started, `"ready"` = listening for onset, `"listening"` = speech detected (interior pauses stay listening — the turn is still open) |
-| `degraded` → `{ aec: boolean, engine: "silero" \| "energy" }` | Degradation flags — surface both in your UI ([Chapter 15](15-troubleshooting.md)) |
+| `degraded` → `{ aec: boolean, engine: "silero" \| "energy", aecScope: "all" \| "remote-only" \| "unknown" \| "none" }` | Degradation flags — surface all in your UI. `aec` stays `true`-means-no-usable-cancellation (scope `"none"`); `aecScope` is the honest scope label ([Chapter 6 §6.6](06-agent-integration.md)) |
 | `_detector`, `_engine` | Advanced/testing only — **not a stable API** (detector traces, engine internals such as `processorTypeUsed`) |
+
+## 5.4a `createAgentAudioRoute(options?)` — cancelable agent audio (WP-E2)
+
+Makes **page-played agent audio cancelable** on browsers whose AEC scope is
+too narrow: the agent voice is played through a local WebRTC loopback, so the
+browser classifies it as "remote participant" audio — the one source its AEC
+always references. WebKit runs **direct** (no loopback — its system AEC
+already references everything).
+
+```js
+const route = await createAgentAudioRoute();   // inside the same click that starts the mic
+instance.setAgentAudioRouted(true);            // feed the stricter-gating rule
+// … wire your TTS source:
+mySourceNode.connect(route.input);             // the ONLY wiring — never also to ctx.destination
+route.gain.value = 0.8;                        // volume lives HERE (the output element stays at 1.0)
+// … later:
+await route.stop();
+instance.setAgentAudioRouted(false);
+```
+
+| Member | Meaning |
+|---|---|
+| `input` → `GainNode` | connect your TTS source here — the only contract |
+| `gain` → `GainNode` | volume control (pre-loopback, inside the AEC reference — [D8]) |
+| `element` / `outputElement` | the audible `<audio autoplay playsinline>` (loopback only); do not re-route or re-volume it |
+| `mode` → `"loopback" \| "direct"` | resolved mode: `"auto"` = WebKit→direct, else loopback; explicit `"loopback"`/`"direct"` wins (`?routemode=` in the demo) |
+| `ready` | resolves when the route carries audio |
+| `getReferenceNode()` | the node whose output is the audible (AEC-referenced) signal — hook for reference-correlation gating (WP-E3) |
+| `stop()` | idempotent teardown (peer connections, element, owned context) |
+
+Options: `{ audioContext?, gain? = 1, mode? = "auto" }`. Create it inside a
+user-gesture call chain (same click as the mic start) — `element.play()`
+needs it. Failures throw `audio-pipeline` — keep your plain playback path and
+let the stricter gating stay armed. See [Chapter 6](06-agent-integration.md)
+for when to use the route vs. `echoCancellation: "all"`.
 
 ## 5.5 Events & payloads
 
@@ -125,7 +162,7 @@ messages are prose, the codes are the contract.
 instead of failing the page. `humanMessage(code)` returns a ready-made UI
 sentence for every code — the demo maps all errors through it.
 
-## 5.7 All 16 exports
+## 5.7 All 17 exports
 
 `import { … } from "speak-or-no-speak"` (npm) / `./src/index.js`
 ([`src/index.js`](../src/index.js)) / `./speak-or-no-speak.esm.js` (bundle) /
@@ -134,6 +171,7 @@ sentence for every code — the demo maps all errors through it.
 | Export | One-liner |
 |---|---|
 | `createSpeakOrNoSpeak` | the facade factory ([§5.1](#51-createspeakornospeakoptions)) — all you need for standard use |
+| `createAgentAudioRoute` | cancelable agent-audio route ([§5.4a](#54a-createagentaudiorouteoptions) — WP-E2) |
 | `SileroVadAdapter` | default Silero v5 engine adapter (advanced: construct + pass as `engine`) |
 | `EnergyVad` | energy-based fallback engine (degraded, noise-blind) |
 | `energyProbability` | pure RMS-vs-noise-floor probability helper (unit-testable) |

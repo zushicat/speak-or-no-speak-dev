@@ -8,6 +8,9 @@
 /** The facade: `createSpeakOrNoSpeak(options)` → start/stop/setAgentSpeaking/state/degraded. */
 export { createSpeakOrNoSpeak } from "./speak-or-no-speak.js";
 
+/** WP-E2 (optional): cancelable agent audio — WebRTC loopback route (D6–D8). */
+export { createAgentAudioRoute } from "./agent-audio/echo-reference-route.js";
+
 /** Default Silero VAD engine adapter + energy fallback (advanced use). */
 export { SileroVadAdapter } from "./vad/silero-vad-adapter.js";
 export { EnergyVad, energyProbability } from "./vad/energy-vad.js";

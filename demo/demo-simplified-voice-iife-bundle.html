@@ -42,12 +42,19 @@
     <button id="voice">Start voice</button>
   </p>
 
+  <p>
+    <label><input type="radio" name="voiceSrc" value="synth" checked> speechSynthesis</label>
+    <label><input type="radio" name="voiceSrc" value="routed"> audio buffer (routed)</label>
+    <small id="voiceNote"></small>
+  </p>
+
   <script>
     const label = document.getElementById("label");
     const errEl = document.getElementById("err");
     const button = document.getElementById("start");
     const smartTurn = document.getElementById("smartTurn");
     const voice_button = document.getElementById("voice");
+    const voiceNote = document.getElementById("voiceNote");
 
     // Bundle source: default stays the pinned CDN build; `?local=1` swaps in
     // the repo build (relative, same origin) for local testing (WP-E0 0.5).
@@ -81,7 +88,7 @@
         return;
       }
 
-      const { createSpeakOrNoSpeak, humanMessage, SmartTurnModel } = bundle;
+      const { createSpeakOrNoSpeak, humanMessage, SmartTurnModel, createAgentAudioRoute } = bundle;
 
       let micRunning = false;
       let micBusy = false;
@@ -147,12 +154,31 @@
           if (instance.degraded.engine === "energy") {
             errEl.textContent = humanMessage("engine-fallback");
           }
-          // WP-E1 (§1.6): honest AEC-scope readout — full status upgrade in WP-E2.
+          // WP-E1 (§1.6) + WP-E2: honest status line — engine + AEC scope.
           const aecScope = instance.degraded.aecScope;
           if (aecScope === "unknown" && !instance.degraded.aec) {
             errEl.textContent = humanMessage("aec-scope-limited");
           }
-          if (aecScope) errEl.textContent += ` (aec scope: ${aecScope})`;
+          if (aecScope) errEl.textContent += ` (engine: ${instance.degraded.engine} · aec scope: ${aecScope})`;
+
+          // WP-E2: cancelable agent-audio route — created HERE inside the
+          // mic-start click (user gesture, R2), reused while the mic runs,
+          // stopped on mic stop. Fail-soft (R3): plain playback + stricter
+          // gating stay active if the loopback cannot be built. `?routemode=`
+          // forces loopback|direct (test hook, D7).
+          if (typeof createAgentAudioRoute === "function") {
+            try {
+              const forced = new URLSearchParams(location.search).get("routemode");
+              route = await createAgentAudioRoute(forced ? { mode: forced } : {});
+              instance.setAgentAudioRouted(true);
+              voiceNote.textContent = ` · route: ${route.mode}`;
+            } catch (routeErr) {
+              route = null;
+              errEl.textContent += ` · agent-audio route failed: ${routeErr?.message ?? routeErr}`;
+            }
+          } else {
+            voiceNote.textContent = " · route: n/a (bundle without createAgentAudioRoute)";
+          }
         } catch (err) {
           // onError may already have rendered the message; otherwise show it here.
           try { instance?.stop(); } catch { /* already torn down */ }
@@ -167,12 +193,18 @@
 
       function stopMicrophone() {
         try {
+          sons?.setAgentAudioRouted(false); // D5: route declaration is per-session
           sons?.stop();
         } catch { /* already torn down */ }
         sons = null;
         setRunning(false);
         label.textContent = "press start";
         errEl.textContent = "";
+        voiceNote.textContent = "";
+        stopRoutedVoice();
+        const r = route;
+        route = null;
+        r?.stop().catch(() => { /* teardown is best-effort */ });
       }
 
       function onError(err) {
@@ -191,22 +223,74 @@
     }
 
     // *******
-    // computer voice
+    // computer voice — two sources (WP-E2):
+    //   speechSynthesis: today's default; NOT cancelable on Chrome/Edge
+    //     without `echoCancellation: "all"` + OS permission (F7 — cannot be
+    //     captured into the AEC reference).
+    //   audio buffer (routed): plays demo/agent-voice-sample.wav through the
+    //     cancelable agent-audio route (createAgentAudioRoute) — the browser
+    //     classifies it as "remote participant" audio and cancels it (D6/D8).
     // *******
     voice_button.addEventListener("click", toggleComputerVoice);
     let voice_running = false;
     const synth = window.speechSynthesis;
     let utterance = new SpeechSynthesisUtterance("Hello. I am happy that you talk to me. Tell me about your day. What have you been up to?");
 
-    function toggleComputerVoice() {
+    let route = null;        // created at mic start (user gesture), stopped at mic stop
+    let routedSource = null; // active AudioBufferSourceNode (loop mode)
+    let voiceBuffer = null;  // decoded agent-voice-sample.wav (decoded once)
+
+    function selectedVoiceSource() {
+      return document.querySelector('input[name="voiceSrc"]:checked')?.value ?? "synth";
+    }
+
+    async function ensureVoiceBuffer() {
+      if (voiceBuffer) return voiceBuffer;
+      const res = await fetch("agent-voice-sample.wav");
+      if (!res.ok) throw new Error(`voice sample fetch failed (${res.status})`);
+      const ab = await res.arrayBuffer();
+      const decodeCtx = new AudioContext(); // one-off decode (route ctx is private by contract)
+      try { voiceBuffer = await decodeCtx.decodeAudioData(ab); }
+      finally { decodeCtx.close().catch(() => {}); }
+      return voiceBuffer;
+    }
+
+    async function playRoutedVoice() {
+      if (!route) throw new Error("route not ready — start the microphone first (the route is created in that click)");
+      const buffer = await ensureVoiceBuffer();
+      const src = route.input.context.createBufferSource();
+      src.buffer = buffer;
+      src.loop = true;
+      src.connect(route.input); // the ONLY wiring (D8) — never also to ctx.destination
+      src.start();
+      routedSource = src;
+    }
+
+    function stopRoutedVoice() {
+      try { routedSource?.stop(); } catch { /* already stopped */ }
+      routedSource = null;
+    }
+
+    async function toggleComputerVoice() {
       voice_running = !voice_running;
       voice_button.textContent = voice_running ? "Stop voice" : "Start voice";
 
       if (voice_running) {
-        synth.speak(utterance);
+        if (selectedVoiceSource() === "routed") {
+          try {
+            await playRoutedVoice();
+          } catch (err) {
+            voice_running = false;
+            voice_button.textContent = "Start voice";
+            errEl.textContent = `Routed voice failed: ${err?.message ?? err}`;
+          }
+        } else {
+          synth.speak(utterance);
+        }
       }
       else {
         synth.cancel();
+        stopRoutedVoice();
       }
     }
 

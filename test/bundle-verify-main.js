@@ -18,12 +18,12 @@
  * every .js under test/) loads it harmlessly (pattern: harness-main.js).
  */
 
-/** The 16 named exports `src/index.js` must expose (plan rev-2 §2 F1). */
+/** The 17 named exports `src/index.js` must expose (rev-2 §2 F1 + rev-8.1 WP-E2). */
 const EXPECTED_EXPORTS = [
   "CloudStubAdapter", "DEFAULTS", "EnergyVad", "ERROR_CODES", "SmartTurnModel",
   "SileroVadAdapter", "SpeakError", "SttAdapter", "TurnDetector",
-  "createSpeakOrNoSpeak", "encodeWav", "encodeWavBytes", "energyProbability",
-  "humanMessage", "mergeOptions", "redemptionFor",
+  "createAgentAudioRoute", "createSpeakOrNoSpeak", "encodeWav", "encodeWavBytes",
+  "energyProbability", "humanMessage", "mergeOptions", "redemptionFor",
 ];
 
 function initVerifyPage() {
@@ -137,7 +137,7 @@ function initVerifyPage() {
     const expected = [...EXPECTED_EXPORTS].sort();
     const ok = names.length === expected.length && names.every((n, i) => n === expected[i]);
     $("meta").textContent =
-      `mode=${mode} · cdn=${noCdn ? "omitted" : "on"} · exports ${names.length}/16 ${ok ? "OK" : "MISMATCH"}`;
+      `mode=${mode} · cdn=${noCdn ? "omitted" : "on"} · exports ${names.length}/${EXPECTED_EXPORTS.length} ${ok ? "OK" : "MISMATCH"}`;
     if (!ok) logLine(`export surface MISMATCH: ${names.join(", ")}`, true);
 
     createSpeakOrNoSpeak = bundle.createSpeakOrNoSpeak;
