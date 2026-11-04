@@ -106,6 +106,36 @@
       font-family: ui-monospace, monospace;
     }
 
+    #voiceRow {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #voiceRow button {
+      margin-top: 0;
+    }
+
+    #voiceRow select {
+      padding: 9px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 0;
+      cursor: pointer;
+      background: #eee;
+      line-height: 1.1;
+      max-width: 16rem; /* the TTS voice list has long entries — keep the row tidy */
+    }
+
+    #voiceRow small {
+      font-size: 13px;
+      font-family: ui-monospace, monospace;
+      color: #93c5fd;
+    }
+
     #bgRow {
       margin-top: 20px;
       display: flex;
@@ -199,6 +229,17 @@
 
     <div id="err"></div>
     <div id="dbg"></div>
+    <div id="voiceRow">
+      <button id="voice" aria-pressed="false">Start computer voice</button>
+      <select id="voiceSrc" aria-label="Voice source">
+        <option value="synth" selected>speechSynthesis</option>
+        <option value="routed">audio buffer (routed)</option>
+      </select>
+      <select id="ttsVoice" aria-label="Speech synthesis voice">
+        <option value="" selected>system default</option>
+      </select>
+      <small id="voiceNote"></small>
+    </div>
     <div id="bgRow">
       <select id="bgSound" aria-label="Background sound">
         <option value="./assets/street-protest.mp3">Street Protest</option>
@@ -224,7 +265,7 @@
   </div>
   <!-- Version query busts the stale module cache while the dev server sends no
        Cache-Control header. Bump it when demo/main.js changes. -->
-  <script type="module" src="./main.js?v=3"></script>
+  <script type="module" src="./main.js?v=5"></script>
 </body>
 
 </html>
