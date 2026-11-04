@@ -18,7 +18,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.31/dist/bundle.min.js"></script>
   <!-- The prebuilt IIFE bundle from the CDN: a classic <script>, no modules —
        it defines the global window.SpeakOrNoSpeak. -->
-  <script src="https://cdn.jsdelivr.net/gh/zushicat/speak-or-no-speak/build/speak-or-no-speak.iife.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/zushicat/speak-or-no-speak-dev/build/speak-or-no-speak.iife.js"></script>
 </head>
 
 <body>
@@ -68,7 +68,7 @@
       label.textContent = "bundle failed to load";
       errEl.textContent =
         "window.SpeakOrNoSpeak is missing — the IIFE bundle did not load from " +
-        "https://cdn.jsdelivr.net/gh/zushicat/speak-or-no-speak/build/speak-or-no-speak.iife.js";
+        "https://cdn.jsdelivr.net/gh/zushicat/speak-or-no-speak-dev/build/speak-or-no-speak.iife.js";
     } else {
       const { createSpeakOrNoSpeak, humanMessage, SmartTurnModel } = bundle;
 
