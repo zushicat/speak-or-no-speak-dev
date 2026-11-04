@@ -39,12 +39,14 @@
   <p id="err"></p>
 
   <p>
-    <button id="voice">Start voice</button>
-  </p>
-
-  <p>
-    <label><input type="radio" name="voiceSrc" value="synth" checked> speechSynthesis</label>
-    <label><input type="radio" name="voiceSrc" value="routed"> audio buffer (routed)</label>
+    <button id="voice">Start computer voice</button>
+    <select id="voiceSrc" aria-label="Voice source">
+      <option value="synth" selected>speechSynthesis</option>
+      <option value="routed">audio buffer (routed)</option>
+    </select>
+    <select id="ttsVoice" aria-label="Speech synthesis voice">
+      <option value="" selected>system default</option>
+    </select>
     <small id="voiceNote"></small>
   </p>
 
@@ -220,7 +222,7 @@
         label.textContent = "press start";
         errEl.textContent = "";
         voiceNote.textContent = "";
-        stopRoutedVoice();
+        stopComputerVoice();
         const r = route;
         route = null;
         r?.stop().catch(() => { /* teardown is best-effort */ });
@@ -249,19 +251,64 @@
     //   audio buffer (routed): plays demo/agent-voice-sample.wav through the
     //     cancelable agent-audio route (createAgentAudioRoute) — the browser
     //     classifies it as "remote participant" audio and cancels it (D6/D8).
+    //   voice dropdown (ttsVoice): the system TTS voices from
+    //     speechSynthesis.getVoices() — applies to the synth source only.
     // *******
     voice_button.addEventListener("click", toggleComputerVoice);
     let voice_running = false;
     const synth = window.speechSynthesis;
     let utterance = new SpeechSynthesisUtterance("Hello. I am happy that you talk to me. Tell me about your day. What have you been up to?");
+    const voiceSrc = document.getElementById("voiceSrc");
+    const ttsVoice = document.getElementById("ttsVoice");
 
     let route = null;        // created at mic start (user gesture), stopped at mic stop
     let routedSource = null; // active AudioBufferSourceNode (loop mode)
     let voiceBuffer = null;  // decoded agent-voice-sample.wav (decoded once)
 
     function selectedVoiceSource() {
-      return document.querySelector('input[name="voiceSrc"]:checked')?.value ?? "synth";
+      return voiceSrc.value;
     }
+
+    /** Button label + aria state follow the running flag. */
+    function setVoiceUi(running) {
+      voice_running = running;
+      voice_button.textContent = running ? "Stop computer voice" : "Start computer voice";
+      voice_button.setAttribute("aria-pressed", String(running));
+    }
+
+    /** Apply the TTS voice picked in the voice dropdown (unset = system
+     *  default). The utterance must get the SpeechSynthesisVoice OBJECT —
+     *  looked up from the live getVoices() list at speak time. */
+    function applySelectedVoice(u) {
+      const selected = ttsVoice.value
+        ? synth.getVoices().find((v) => v.voiceURI === ttsVoice.value)
+        : null;
+      u.voice = selected ?? null;
+      u.lang = selected ? selected.lang : ""; // "" = user-agent default language
+    }
+
+    /** Populate the voice dropdown from speechSynthesis.getVoices() — the
+     *  list arrives async in Chrome (voiceschanged) and can change; the
+     *  user's choice survives repopulation. */
+    function populateTtsVoices() {
+      const voices = synth.getVoices();
+      if (!voices.length) return;
+      const previous = ttsVoice.value;
+      ttsVoice.textContent = "";
+      const defaultOption = document.createElement("option");
+      defaultOption.value = "";
+      defaultOption.textContent = "system default";
+      ttsVoice.appendChild(defaultOption);
+      for (const v of voices) {
+        const option = document.createElement("option");
+        option.value = v.voiceURI;
+        option.textContent = `${v.name} (${v.lang})`;
+        ttsVoice.appendChild(option);
+      }
+      if ([...ttsVoice.options].some((o) => o.value === previous)) ttsVoice.value = previous;
+    }
+    populateTtsVoices();
+    synth.addEventListener("voiceschanged", populateTtsVoices);
 
     async function ensureVoiceBuffer() {
       if (voiceBuffer) return voiceBuffer;
@@ -290,26 +337,32 @@
       routedSource = null;
     }
 
-    async function toggleComputerVoice() {
-      voice_running = !voice_running;
-      voice_button.textContent = voice_running ? "Stop voice" : "Start voice";
+    /** Full voice teardown — also called from stopMicrophone (mic stop ends
+     *  the voice: the routed source dies with the route, and a lingering
+     *  utterance would leave the button label lying). */
+    function stopComputerVoice() {
+      setVoiceUi(false);
+      synth.cancel();
+      stopRoutedVoice();
+    }
 
+    async function toggleComputerVoice() {
       if (voice_running) {
-        if (selectedVoiceSource() === "routed") {
-          try {
-            await playRoutedVoice();
-          } catch (err) {
-            voice_running = false;
-            voice_button.textContent = "Start voice";
-            errEl.textContent = `Routed voice failed: ${err?.message ?? err}`;
-          }
-        } else {
-          synth.speak(utterance);
-        }
+        stopComputerVoice();
+        return;
       }
-      else {
-        synth.cancel();
-        stopRoutedVoice();
+      setVoiceUi(true);
+
+      if (selectedVoiceSource() === "routed") {
+        try {
+          await playRoutedVoice();
+        } catch (err) {
+          setVoiceUi(false);
+          errEl.textContent = `Routed voice failed: ${err?.message ?? err}`;
+        }
+      } else {
+        applySelectedVoice(utterance);
+        synth.speak(utterance);
       }
     }
 

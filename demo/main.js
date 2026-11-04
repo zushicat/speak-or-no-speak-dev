@@ -4,7 +4,7 @@
  * this file maps facade events → DOM, toggles the microphone, and plays an
  * ambient background track for noise-robustness testing.
  */
-import { createSpeakOrNoSpeak, humanMessage, SmartTurnModel } from "../src/index.js";
+import { createSpeakOrNoSpeak, humanMessage, SmartTurnModel, createAgentAudioRoute } from "../src/index.js";
 import { CloudStubAdapter } from "../src/stt/cloud-stub-adapter.js";
 
 const button = document.getElementById("start");
@@ -20,6 +20,10 @@ const bgSound = document.getElementById("bgSound");
 const bgToggle = document.getElementById("bgToggle");
 const bgVolume = document.getElementById("bgVolume");
 const bgVolumeValue = document.getElementById("bgVolumeValue");
+const voice = document.getElementById("voice");
+const voiceSrc = document.getElementById("voiceSrc");
+const ttsVoice = document.getElementById("ttsVoice");
+const voiceNote = document.getElementById("voiceNote");
 
 let sons = null;
 let micRunning = false;
@@ -27,6 +31,15 @@ let micBusy = false;
 
 /** Cached across start/stop cycles — the ONNX session loads once. */
 let smartTurnModel = null;
+
+// Computer voice (rev-9) — start/stop button + voice-source select.
+const synth = window.speechSynthesis;
+const utterance = new SpeechSynthesisUtterance("Hello. I am happy that you talk to me. Tell me about your day. What have you been up to?");
+
+let voiceRunning = false;
+let route = null;        // created at mic start (user gesture), stopped at mic stop
+let routedSource = null; // active AudioBufferSourceNode (loop mode)
+let voiceBuffer = null;  // decoded agent-voice-sample.wav (decoded once)
 
 /** One looping media element for the ambient background bed. */
 const bgAudio = new Audio();
@@ -190,6 +203,21 @@ async function startMicrophone() {
     if (instance.degraded.engine === "energy") {
       errEl.textContent = humanMessage("engine-fallback");
     }
+
+    // WP-E2: cancelable agent-audio route — created HERE inside the mic-start
+    // click (user gesture, R2), reused while the mic runs, stopped on mic
+    // stop. Fail-soft (R3): plain playback + stricter gating stay active if
+    // the loopback cannot be built. `?routemode=` forces loopback|direct (D7).
+    try {
+      const forced = new URLSearchParams(location.search).get("routemode");
+      route = await createAgentAudioRoute(forced ? { mode: forced } : {});
+      instance.setAgentAudioRouted(true);
+      instance.setAgentAudioReference(route);
+      voiceNote.textContent = ` · route: ${route.mode}`;
+    } catch (routeErr) {
+      route = null;
+      errEl.textContent += ` · agent-audio route failed: ${routeErr?.message ?? routeErr}`;
+    }
   } catch (err) {
     // onError may already have rendered the message; otherwise show it here.
     try { instance?.stop(); } catch { /* already torn down */ }
@@ -210,6 +238,9 @@ async function startMicrophone() {
 
 function stopMicrophone() {
   try {
+    sons?.setAgentAudioRouted(false); // D5: route declaration is per-session
+  } catch { /* already torn down */ }
+  try {
     sons?.stop();
   } catch (err) {
     logLine(`stop failed: ${err?.message ?? err}`, true);
@@ -224,6 +255,11 @@ function stopMicrophone() {
   label.textContent = "press start";
   dbg.textContent = "";
   errEl.textContent = "";
+  voiceNote.textContent = "";
+  stopComputerVoice();
+  const r = route;
+  route = null;
+  r?.stop().catch(() => { /* teardown is best-effort */ });
 }
 
 function onError(err) {
@@ -233,10 +269,116 @@ function onError(err) {
 }
 
 // ---------------------------------------------------------------------------
+// Computer voice — two sources (WP-E2):
+//   speechSynthesis: today's default; NOT cancelable on Chrome/Edge
+//     without `echoCancellation: "all"` + OS permission (F7 — cannot be
+//     captured into the AEC reference).
+//   audio buffer (routed): plays demo/agent-voice-sample.wav through the
+//     cancelable agent-audio route (createAgentAudioRoute) — the browser
+//     classifies it as "remote participant" audio and cancels it (D6/D8).
+//   voice dropdown (ttsVoice): the system TTS voices from
+//     speechSynthesis.getVoices() — applies to the synth source only.
+// ---------------------------------------------------------------------------
+
+function setVoiceUi(running) {
+  voiceRunning = running;
+  voice.textContent = running ? "Stop computer voice" : "Start computer voice";
+  voice.setAttribute("aria-pressed", String(running));
+}
+
+async function ensureVoiceBuffer() {
+  if (voiceBuffer) return voiceBuffer;
+  const res = await fetch("agent-voice-sample.wav");
+  if (!res.ok) throw new Error(`voice sample fetch failed (${res.status})`);
+  const ab = await res.arrayBuffer();
+  const decodeCtx = new AudioContext(); // one-off decode (route ctx is private by contract)
+  try { voiceBuffer = await decodeCtx.decodeAudioData(ab); }
+  finally { decodeCtx.close().catch(() => {}); }
+  return voiceBuffer;
+}
+
+async function playRoutedVoice() {
+  if (!route) throw new Error("route not ready — start the microphone first (the route is created in that click)");
+  const buffer = await ensureVoiceBuffer();
+  const src = route.input.context.createBufferSource();
+  src.buffer = buffer;
+  src.loop = true;
+  src.connect(route.input); // the ONLY wiring (D8) — never also to ctx.destination
+  src.start();
+  routedSource = src;
+}
+
+function stopRoutedVoice() {
+  try { routedSource?.stop(); } catch { /* already stopped */ }
+  routedSource = null;
+}
+
+function stopComputerVoice() {
+  setVoiceUi(false);
+  synth.cancel();
+  stopRoutedVoice();
+}
+
+async function toggleComputerVoice() {
+  if (voiceRunning) {
+    stopComputerVoice();
+    return;
+  }
+  setVoiceUi(true);
+
+  if (voiceSrc.value === "routed") {
+    try {
+      await playRoutedVoice();
+    } catch (err) {
+      setVoiceUi(false);
+      errEl.textContent = `Routed voice failed: ${err?.message ?? err}`;
+    }
+  } else {
+    applySelectedVoice(utterance);
+    synth.speak(utterance);
+  }
+}
+
+/** Apply the TTS voice picked in the voice dropdown (unset = system
+ *  default). The utterance must get the SpeechSynthesisVoice OBJECT —
+ *  looked up from the live getVoices() list at speak time. */
+function applySelectedVoice(u) {
+  const selected = ttsVoice.value
+    ? synth.getVoices().find((v) => v.voiceURI === ttsVoice.value)
+    : null;
+  u.voice = selected ?? null;
+  u.lang = selected ? selected.lang : ""; // "" = user-agent default language
+}
+
+/** Populate the voice dropdown from speechSynthesis.getVoices() — the
+ *  list arrives async in Chrome (voiceschanged) and can change; the
+ *  user's choice survives repopulation. */
+function populateTtsVoices() {
+  const voices = synth.getVoices();
+  if (!voices.length) return;
+  const previous = ttsVoice.value;
+  ttsVoice.textContent = "";
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.textContent = "system default";
+  ttsVoice.appendChild(defaultOption);
+  for (const v of voices) {
+    const option = document.createElement("option");
+    option.value = v.voiceURI;
+    option.textContent = `${v.name} (${v.lang})`;
+    ttsVoice.appendChild(option);
+  }
+  if ([...ttsVoice.options].some((o) => o.value === previous)) ttsVoice.value = previous;
+}
+populateTtsVoices();
+synth.addEventListener("voiceschanged", populateTtsVoices);
+
+// ---------------------------------------------------------------------------
 // Wiring
 // ---------------------------------------------------------------------------
 
 button.addEventListener("click", toggleMicrophone);
+voice.addEventListener("click", toggleComputerVoice);
 
 bgToggle.addEventListener("click", () => {
   if (bgPlaying) stopBackground();
