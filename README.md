@@ -76,4 +76,15 @@ The `onInterrupt` callback signals an interruption; the user's audio arrives lat
 5. [Understand the architecture and optional model](docs/05-architecture-and-extensions.md)
 6. [Diagnose failures and limitations](docs/06-troubleshooting.md)
 
-The library is MIT licensed. Run `npm test` for the Node test suite and `npm run build:bundle` to rebuild the browser bundles.
+## Misc
+- Read the [documentation](/Users/karin/_programming/speak-or-no-speak/docs/README.md)
+    - [Read here](/Users/karin/_programming/speak-or-no-speak/docs/03-demo.md) how to start the [demo](/Users/karin/_programming/speak-or-no-speak/demo)
+- [Inspect the architecture](/Users/karin/_programming/speak-or-no-speak/docs/archify/speak-or-no-speak.architecture.html)
+
+### Demo
+Check out the running demo: [https://zushicat.github.io/speak-or-no-speak-dev/](https://zushicat.github.io/speak-or-no-speak-dev/)
+![Demo Screenshot](./docs/assets/demo.png)
+
+#
+### Architecture
+![Architecture Screenshot](./docs/assets/architecture.png)
