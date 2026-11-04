@@ -70,7 +70,9 @@ calibration fixtures ([§16.5](16-build-test-publish.md#165-the-replay-harness-a
 | Feels laggy at turn end | `redemptionMs` ↓ (e.g. 500) | rely on the adaptive policy instead of forcing it low | hesitant speakers get cut off — check `stats.interiorPauses` |
 | Speaker gets cut off mid-thought | `redemptionMs` ↑ (e.g. 800) or enable Smart Turn ([Chapter 12](12-smart-turn.md)) | `shortPauseMs` ↑ so hesitation opens PAUSE earlier | turn-end latency grows |
 | Agent interrupt feels slow | `bargeInConfirmFrames` ↓ (e.g. 4–5) | only with AEC active | without AEC this invites echo false-positives |
-| False interrupts from the agent's own voice (no AEC) | keep `noAecBargeInConfirmMs` (300) | raise `noAecRmsFactor` (e.g. 3) | very quiet users may not pass the rms gate |
+| False interrupts from the agent's own voice (no AEC) | **route the agent audio** (`createAgentAudioRoute`, [§5.4a](05-api-reference.md#54a-createagentaudiorouteoptions)) — measured 0 false starts/interrupts with the route or the `"all"` scope | keep `noAecBargeInConfirmMs` (300); the coherence echo gate (`echoGate: { enabled: true }`) halves the worst-case residual | very quiet users may not pass the rms gate; lowering `echoGate.correlationThreshold` without calibration risks swallowed speech |
+| Kiosk / IVR (barge-in unwanted) | `halfDuplex: true` | headphones + OS AEC ([§6.10](06-agent-integration.md#610-os-level-echo-cancellation)) | no barge-in while the agent talks — by design |
+| Barge-in feels slow although AEC works | declare the route (`setAgentAudioRouted(true)`) or `strictGating: "off"` | check `degraded.aecScope` first — `"all"` already exempts | only safe when cancellation is actually working |
 | Game avatar (fast commands) | `minSpeechMs` ↓ (e.g. 150) **and** `onsetConfirmFrames` ↓ (e.g. 6) | — | more cough/click sensitivity — that is the trade |
 | Long dictation sessions | `maxTurnMs` ↑ (e.g. 60000) | — | memory: turn audio accumulates in RAM |
 

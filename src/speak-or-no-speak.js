@@ -49,6 +49,7 @@ export async function createSpeakOrNoSpeak(options = {}) {
     debug: opts.debug,
     turnModel: opts.turnModel, // WP8: optional semantic end-of-turn model
     echoGate: opts.echoGate,   // WP-E3: coherence echo gate (default off, D9)
+    halfDuplex: opts.halfDuplex, // WP-E5: M6 escape hatch (default off)
   });
 
   let started = false;

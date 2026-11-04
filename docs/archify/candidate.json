@@ -2,68 +2,64 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Speak Or No Speak — browser turn detection",
-    "output": "docs/archify/architecture-speak-or-no-speak-20261031-083424/speak-or-no-speak.architecture.html",
+    "title": "Speak Or No Speak — browser turn-taking architecture",
+    "output": "docs/archify/speak-or-no-speak.architecture.html",
     "quality_profile": "showcase",
     "locale": "en",
     "legend": {
       "mode": "auto",
       "entries": {
-        "frontend": { "label": "Browser UI" },
+        "frontend": { "label": "Demo page (browser UI)" },
         "backend": { "label": "Module code (src/)" },
         "cloud": { "label": "CDN runtime libs" },
         "database": { "label": "Local model asset" },
-        "external": { "label": "Human · device · dev server" }
+        "external": { "label": "Human · device · dev endpoint" }
       }
     },
     "repository": {
       "url": "git@github-personal:zushicat/speak-or-no-speak.git",
-      "revision": "1c1be5d61a0bfd6009db5d28fb431b896d4e9f13",
+      "revision": "fc7ecb06f38b613cc9232f0c2a7665c7bcaf1d00",
       "link_mode": "local-only"
     }
   },
   "components": [
-    {
-      "id": "user",
-      "type": "external",
-      "label": "User",
-      "sublabel": "speaks · barges in",
-      "icon": "person",
-      "pos": [40, 360],
-      "size": [130, 64]
-    },
-    {
-      "id": "mic",
-      "type": "external",
-      "label": "Microphone",
-      "sublabel": "getUserMedia · AEC/NS/AGC",
-      "pos": [196, 356],
-      "size": [170, 72]
-    },
     {
       "id": "cdn",
       "type": "cloud",
       "label": "jsDelivr CDN",
       "sublabel": "vad-web 0.0.31 · ort-web 1.22.0",
       "tag": "pinned",
-      "pos": [40, 56],
-      "size": [220, 84],
+      "pos": [40, 60],
+      "size": [250, 88],
       "sources": [
-        { "path": "demo/index.html", "line": 109, "end_line": 112, "label": "pinned script tags" },
-        { "path": "src/vad/silero-vad-adapter.js", "line": 47, "end_line": 49, "label": "dist bases" }
+        { "path": "demo/index.html", "line": 183, "end_line": 184, "label": "pinned script tags" },
+        { "path": "src/vad/silero-vad-adapter.js", "line": 54, "end_line": 56, "label": "dist bases" }
+      ]
+    },
+    {
+      "id": "route",
+      "type": "backend",
+      "label": "createAgentAudioRoute()",
+      "sublabel": "WebRTC loopback · reference tap",
+      "tag": "opt-in (WP-E2)",
+      "pos": [570, 40],
+      "size": [240, 84],
+      "sources": [
+        { "path": "src/agent-audio/echo-reference-route.js", "line": 118, "end_line": 135, "label": "loopback pc1→pc2→<audio>" },
+        { "path": "src/agent-audio/echo-reference-route.js", "line": 236, "end_line": 243, "label": "onReferenceFrame tap" }
       ]
     },
     {
       "id": "app",
       "type": "frontend",
       "label": "Demo page",
-      "sublabel": "index.html + demo/main.js · UI mapping",
+      "sublabel": "index.html + main.js · UI mapping only",
       "tag": "zero-build",
-      "pos": [800, 40],
-      "size": [250, 88],
+      "pos": [930, 40],
+      "size": [280, 88],
       "sources": [
-        { "path": "demo/main.js", "line": 1, "end_line": 6, "label": "UI mapping only" },
-        { "path": "demo/index.html", "line": 145, "label": "module script" }
+        { "path": "demo/main.js", "line": 1, "end_line": 8, "label": "UI mapping only" },
+        { "path": "demo/main.js", "line": 154, "end_line": 178, "label": "factory call + start()" }
       ]
     },
     {
@@ -72,24 +68,59 @@
       "label": "createSpeakOrNoSpeak()",
       "sublabel": "facade · wires engine ↔ detector",
       "tag": "public API",
-      "pos": [860, 200],
-      "size": [260, 96],
+      "pos": [930, 190],
+      "size": [280, 96],
       "sources": [
-        { "path": "src/speak-or-no-speak.js", "line": 37, "end_line": 48, "label": "factory" },
-        { "path": "src/speak-or-no-speak.js", "line": 69, "end_line": 100, "label": "start + fallback ladder" }
+        { "path": "src/speak-or-no-speak.js", "line": 40, "end_line": 52, "label": "factory" },
+        { "path": "src/speak-or-no-speak.js", "line": 162, "end_line": 188, "label": "start() + fallback ladder" },
+        { "path": "src/speak-or-no-speak.js", "line": 109, "end_line": 120, "label": "frame pump → detector" }
+      ]
+    },
+    {
+      "id": "voicegate",
+      "type": "backend",
+      "label": "AgentVoiceGate",
+      "sublabel": "speaker embedding · profile JSON",
+      "tag": "opt-in (WP-E4)",
+      "pos": [1350, 190],
+      "size": [240, 84],
+      "sources": [
+        { "path": "src/gate/agent-voice-gate.js", "line": 147, "end_line": 167, "label": "feed + window scoring" },
+        { "path": "src/gate/agent-voice-gate.js", "line": 204, "end_line": 219, "label": "scoreTurn → cosine" }
+      ]
+    },
+    {
+      "id": "user",
+      "type": "external",
+      "label": "User",
+      "sublabel": "speaks · barges in",
+      "icon": "person",
+      "pos": [40, 340],
+      "size": [130, 64]
+    },
+    {
+      "id": "mic",
+      "type": "external",
+      "label": "Microphone",
+      "sublabel": "getUserMedia · AEC/NS/AGC",
+      "pos": [240, 340],
+      "size": [180, 72],
+      "sources": [
+        { "path": "src/vad/aec-scope.js", "line": 57, "end_line": 62, "label": "AEC constraints" },
+        { "path": "src/vad/silero-vad-adapter.js", "line": 220, "end_line": 221, "label": "getUserMedia call" }
       ]
     },
     {
       "id": "silero",
       "type": "backend",
       "label": "SileroVadAdapter",
-      "sublabel": "Silero v5 via vad-web",
+      "sublabel": "Silero v5 via vad-web (window.vad)",
       "tag": "default engine",
-      "pos": [520, 352],
+      "pos": [575, 340],
       "size": [210, 80],
       "sources": [
-        { "path": "src/vad/silero-vad-adapter.js", "line": 191, "end_line": 215, "label": "dual-mode lib resolution" },
-        { "path": "src/vad/silero-vad-adapter.js", "line": 224, "end_line": 251, "label": "getUserMedia + AEC check" }
+        { "path": "src/vad/silero-vad-adapter.js", "line": 362, "end_line": 377, "label": "lib resolution CDN/npm" },
+        { "path": "src/vad/silero-vad-adapter.js", "line": 304, "end_line": 318, "label": "onFrameProcessed → frame" }
       ]
     },
     {
@@ -98,12 +129,12 @@
       "label": "TurnDetector",
       "sublabel": "ready/listening/pause × agentSpeaking",
       "tag": "adaptive endpointing",
-      "pos": [880, 348],
-      "size": [250, 104],
+      "pos": [920, 340],
+      "size": [270, 104],
       "sources": [
-        { "path": "src/turn/turn-detector.js", "line": 165, "end_line": 306, "label": "onFrame state machine" },
-        { "path": "src/turn/turn-detector.js", "line": 59, "end_line": 65, "label": "adaptive redemption" },
-        { "path": "src/turn/turn-detector.js", "line": 439, "end_line": 475, "label": "model gate, fail-open" }
+        { "path": "src/turn/turn-detector.js", "line": 203, "end_line": 361, "label": "onFrame state machine" },
+        { "path": "src/turn/turn-detector.js", "line": 60, "end_line": 66, "label": "adaptive redemption" },
+        { "path": "src/turn/turn-detector.js", "line": 444, "end_line": 481, "label": "echo gate verdict" }
       ]
     },
     {
@@ -111,37 +142,25 @@
       "type": "backend",
       "label": "EnergyVad",
       "sublabel": "RMS vs adaptive noise floor",
-      "tag": "degraded",
-      "pos": [400, 490],
-      "size": [210, 84],
+      "tag": "degraded fallback",
+      "pos": [575, 500],
+      "size": [180, 84],
       "sources": [
-        { "path": "src/vad/energy-vad.js", "line": 86, "end_line": 130, "label": "ScriptProcessor pipeline" },
-        { "path": "src/vad/energy-vad.js", "line": 137, "end_line": 181, "label": "frame pump" }
+        { "path": "src/vad/energy-vad.js", "line": 95, "end_line": 130, "label": "ScriptProcessor pipeline" },
+        { "path": "src/vad/energy-vad.js", "line": 151, "end_line": 195, "label": "downsample → frames" }
       ]
     },
     {
       "id": "turnmodel",
       "type": "backend",
       "label": "SmartTurnModel",
-      "sublabel": "optional end-of-turn · fail-open 300 ms",
+      "sublabel": "Whisper log-mel → ORT (window.ort)",
       "tag": "opt-in (WP8)",
-      "pos": [880, 518],
-      "size": [250, 88],
+      "pos": [920, 500],
+      "size": [270, 88],
       "sources": [
-        { "path": "src/turn-model/smart-turn.js", "line": 49, "end_line": 77, "label": "session + predictComplete" },
-        { "path": "src/turn-model/whisper-features.js", "line": 1, "end_line": 20, "label": "pure JS features" }
-      ]
-    },
-    {
-      "id": "weights",
-      "type": "database",
-      "label": "smart-turn-v3.2-cpu.onnx",
-      "sublabel": "8 MB int8 · /vendor/ (gitignored)",
-      "pos": [880, 674],
-      "size": [250, 76],
-      "sources": [
-        { "path": "src/turn-model/smart-turn.js", "line": 41, "label": "/vendor/ default URL" },
-        { "path": "src/turn-model/smart-turn.js", "line": 56, "end_line": 60, "label": "session.create" }
+        { "path": "src/turn-model/smart-turn.js", "line": 70, "end_line": 77, "label": "predictComplete" },
+        { "path": "src/turn-model/whisper-features.js", "line": 1, "end_line": 12, "label": "pure JS features" }
       ]
     },
     {
@@ -149,12 +168,25 @@
       "type": "backend",
       "label": "STT adapter",
       "sublabel": "app-supplied · CloudStubAdapter",
-      "tag": "app-wired",
-      "pos": [1240, 518],
-      "size": [220, 88],
+      "tag": "app-wired (WP9)",
+      "pos": [1330, 500],
+      "size": [230, 84],
       "sources": [
         { "path": "src/stt/stt-adapter.js", "line": 4, "end_line": 13, "label": "outside real-time loop" },
-        { "path": "src/stt/cloud-stub-adapter.js", "line": 39, "end_line": 50, "label": "WAV POST" }
+        { "path": "src/stt/cloud-stub-adapter.js", "line": 39, "end_line": 50, "label": "POST WAV" }
+      ]
+    },
+    {
+      "id": "weights",
+      "type": "database",
+      "label": "/vendor/ ONNX models",
+      "sublabel": "smart-turn-v3.2-cpu · wespeaker_resnet34",
+      "tag": "gitignored",
+      "pos": [920, 660],
+      "size": [270, 76],
+      "sources": [
+        { "path": "src/turn-model/smart-turn.js", "line": 41, "label": "/vendor/ default URL" },
+        { "path": "src/gate/agent-voice-gate.js", "line": 84, "end_line": 85, "label": "gate model/profile URLs" }
       ]
     },
     {
@@ -163,10 +195,10 @@
       "label": "STT endpoint",
       "sublabel": "dev stub :5175 · or your backend",
       "tag": "dev-only",
-      "pos": [1240, 674],
-      "size": [220, 76],
+      "pos": [1330, 660],
+      "size": [230, 76],
       "sources": [
-        { "path": "demo/stt-stub-server.py", "line": 30, "end_line": 40, "label": "canned JSON + CORS" }
+        { "path": "demo/stt-stub-server.py", "line": 1, "end_line": 12, "label": "canned JSON + CORS" }
       ]
     }
   ],
@@ -174,93 +206,116 @@
     {
       "kind": "region",
       "label": "Browser tab — secure context (https · localhost)",
-      "wraps": ["app", "facade", "silero", "energy", "detector", "turnmodel", "stt"]
+      "wraps": ["route", "app", "facade", "voicegate", "silero", "detector", "energy", "turnmodel", "stt"]
     },
     {
       "kind": "region",
-      "label": "Local dev machine — assets & stub",
+      "label": "Local dev machine — assets & dev endpoint",
       "wraps": ["weights", "stub"]
     }
   ],
   "connections": [
-    { "id": "user-mic", "from": "user", "to": "mic" },
+    { "id": "user-mic", "from": "user", "to": "mic", "label": "speaks" },
     { "id": "mic-silero", "from": "mic", "to": "silero", "label": "mic stream · AEC on" },
-    { "id": "silero-detector", "from": "silero", "to": "detector", "label": "VadFrame · 32 ms", "fromSide": "right", "toSide": "left" },
-    { "id": "energy-detector", "from": "energy", "to": "detector", "label": "degraded frames", "fromSide": "right", "toSide": "left" },
+    { "id": "silero-detector", "from": "silero", "to": "detector", "label": "VadFrame · 32 ms" },
     {
-      "id": "facade-silero",
-      "from": "facade",
-      "to": "silero",
-      "label": "constructs · start()",
+      "id": "mic-energy",
+      "from": "mic",
+      "to": "energy",
+      "label": "opens own stream on fallback",
+      "variant": "dashed",
       "fromSide": "bottom",
       "toSide": "top",
-      "via": [[990, 326], [625, 326]]
+      "via": [[330, 456], [665, 456]]
     },
+    { "id": "energy-detector", "from": "energy", "to": "detector", "label": "degraded frames", "variant": "dashed" },
+    { "id": "facade-silero", "from": "facade", "to": "silero", "label": "constructs · start()" },
     {
       "id": "facade-energy",
       "from": "facade",
       "to": "energy",
-      "label": "engine failure → energy fallback",
+      "label": "engine-fallback ladder",
       "variant": "dashed",
       "fromSide": "left",
-      "toSide": "left",
-      "via": [[20, 248], [20, 532]],
-      "labelAt": [250, 248]
+      "toSide": "left"
     },
+    { "id": "facade-detector", "from": "facade", "to": "detector", "label": "wires callbacks · noAecMode" },
+    { "id": "app-facade", "from": "app", "to": "facade", "label": "start/stop · setAgentSpeaking()", "labelAt": [960, 142] },
+    { "id": "facade-app", "from": "facade", "to": "app", "label": "onSpeechStart · onTurnEnd · onInterrupt", "labelAt": [940, 172] },
     {
-      "id": "facade-detector",
-      "from": "facade",
-      "to": "detector",
-      "label": "wires callbacks",
-      "fromSide": "right",
+      "id": "app-cdn",
+      "from": "app",
+      "to": "cdn",
+      "label": "pinned CDN scripts",
+      "fromSide": "top",
       "toSide": "top",
-      "via": [[1160, 248], [1160, 322], [1005, 322]]
+      "via": [[1070, 14], [165, 14]]
     },
-    { "id": "app-facade", "from": "app", "to": "facade", "label": "start() · setAgentSpeaking()" },
-    { "id": "facade-app", "from": "facade", "to": "app", "label": "onSpeechStart · onTurnEnd · onInterrupt" },
-    { "id": "app-cdn", "from": "app", "to": "cdn", "label": "pinned <script> tags", "fromSide": "left", "toSide": "right" },
+    { "id": "detector-turnmodel", "from": "detector", "to": "turnmodel", "label": "predictComplete · fail-open 300 ms", "variant": "dashed" },
+    { "id": "turnmodel-weights", "from": "turnmodel", "to": "weights", "label": "lazy ONNX session (/vendor/)" },
+    { "id": "facade-voicegate", "from": "facade", "to": "voicegate", "label": "turn-end chain" },
+    {
+      "id": "voicegate-weights",
+      "from": "voicegate",
+      "to": "weights",
+      "label": "embedding ONNX",
+      "fromSide": "bottom",
+      "toSide": "right",
+      "via": [[1470, 310], [1260, 310], [1260, 698]]
+    },
+    { "id": "app-route", "from": "app", "to": "route", "label": "TTS → input" },
+    { "id": "route-facade", "from": "route", "to": "facade", "label": "reference tap" },
     {
       "id": "app-stt",
       "from": "app",
       "to": "stt",
-      "label": "transcribe(turn audio)",
+      "label": "onTurnEnd audio → transcribe()",
       "variant": "dashed",
       "fromSide": "right",
-      "toSide": "top",
-      "via": [[1350, 84]]
+      "toSide": "right",
+      "via": [[1660, 84], [1660, 542]]
     },
-    { "id": "detector-turnmodel", "from": "detector", "to": "turnmodel", "label": "predictComplete(turnAudio)", "variant": "dashed", "fromSide": "bottom", "toSide": "top" },
-    { "id": "turnmodel-weights", "from": "turnmodel", "to": "weights", "label": "lazy ONNX session (/vendor/)", "fromSide": "bottom", "toSide": "top" },
-    { "id": "stt-stub", "from": "stt", "to": "stub", "label": "POST WAV → {text}", "fromSide": "bottom", "toSide": "top" }
+    { "id": "stt-stub", "from": "stt", "to": "stub", "label": "POST WAV → {text}" }
   ],
   "cards": [
     {
       "dot": "cyan",
       "title": "Wiring contract",
       "items": [
-        "createSpeakOrNoSpeak() merges options, builds engine + TurnDetector, and wires frames; the mic opens only in start() (speak-or-no-speak.js:37-59)",
-        "App drives start() / stop() / setAgentSpeaking(); the facade delivers onSpeechStart, onTurnEnd, onInterrupt (speak-or-no-speak.js:69-116)",
-        "The page loads pinned CDN scripts; the adapter reads window.vad, SmartTurnModel reads window.ort (index.html:109-112, silero-vad-adapter.js:199-208)",
-        "MicVAD.new is timeout-guarded (8 s): AudioWorklet hang → documented ScriptProcessor retry (silero-vad-adapter.js:134-177)"
+        "createSpeakOrNoSpeak() merges options, builds engine + TurnDetector, and pumps frames — the mic opens only in start() (speak-or-no-speak.js:40-52, 109-120, 162-188)",
+        "The app drives start/stop/setAgentSpeaking; the facade delivers onSpeechStart, onTurnEnd, onInterrupt (speak-or-no-speak.js:130-160, 209-211)",
+        "The page loads pinned CDN scripts; the adapter reads window.vad, the models read window.ort (index.html:183-184, silero-vad-adapter.js:362, smart-turn.js:45)",
+        "MicVAD.new is timeout-guarded (8 s): an AudioWorklet hang retries the documented ScriptProcessor path (silero-vad-adapter.js:296-339)"
       ]
     },
     {
       "dot": "rose",
       "title": "Degradation ladder",
       "items": [
-        "Silero fails to load (cdn-unavailable / engine-load-failed / audio-pipeline) → EnergyVad takes over; degraded.engine = \"energy\" (speak-or-no-speak.js:78-95)",
-        "Mic track without active AEC → stricter barge-in gating: ~300 ms confirm and frame rms > 2× rolling playback baseline (turn-detector.js:196-201)",
-        "Smart-turn model error or 300 ms timeout → fail-open: the turn end emits anyway (turn-detector.js:467-474)"
+        "Silero failing to load (cdn-unavailable / engine-load-failed / audio-pipeline) switches to EnergyVad; degraded.engine = \"energy\" (speak-or-no-speak.js:162-188)",
+        "AEC scope is classified from track settings (all / remote-only / unknown / none); scope \"none\" or un-routed \"unknown\" arms stricter barge-in gating (aec-scope.js:77-84, 130-138)",
+        "Stricter gating: ~300 ms confirm + frame rms > 2× the rolling agent-playback baseline (turn-detector.js:232-248)",
+        "Smart-turn errors or the 300 ms timeout fail open — the turn end emits anyway (turn-detector.js:621-628)"
       ]
     },
     {
       "dot": "amber",
-      "title": "Agent flag & real-time discipline",
+      "title": "Agent flag, echo & voice gates",
       "items": [
-        "setAgentSpeaking(true) suppresses onTurnEnd/onSpeechStart; confirmed speech fires onInterrupt, 500 ms grace keeps the turn whole (turn-detector.js:187-236)",
-        "Turn end = adaptive redemption: redemptionFor() derives 350–1200 ms from the turn's rhythm (turn-detector.js:59-65)",
-        "STT lives strictly outside the real-time loop — apps wire adapters to onTurnEnd audio; failures never affect detection (stt-adapter.js:4-13)",
-        "npm start serves the zero-build page, ES modules and /vendor/*.onnx on :5173 (package.json:23)"
+        "While the agent flag is armed no turn ends; confirmed speech fires onInterrupt and a 500 ms grace keeps the turn whole (turn-detector.js:554-582)",
+        "Turn end uses adaptive redemption: 350–1200 ms derived from the turn's rhythm (turn-detector.js:60-66)",
+        "Echo gate (default OFF): normalized cross-correlation against the route's reference tap; either gate alone can reject a frame (echo-correlation.js:38-83, turn-detector.js:239-244)",
+        "Voice gate (default OFF): turn audio → kaldi fbank → speaker embedding → cosine vs the committed profile; fail-open suppression (agent-voice-gate.js:204-219, speak-or-no-speak.js:140-156)"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Packaging & test surface",
+      "items": [
+        "STT lives strictly outside the real-time loop — apps wire adapters to onTurnEnd audio only (stt-adapter.js:4-13)",
+        "Turn audio = RingBuffer pre-speech pad + accumulated frames, 16 kHz mono (ring-buffer.js:1-14)",
+        "npm test runs the Node suite; npm run build:bundle emits ESM/IIFE bundles with vad-web external (package.json:22-27, build-bundle.mjs:48-57)",
+        "encodeWav powers the demo's save-last-turn download and the WP6 replay fixtures (wav-export.js:22-52)"
       ]
     }
   ]

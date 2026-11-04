@@ -29,7 +29,7 @@
 ### Reference
 
 5. **[API reference](05-api-reference.md)** — `createSpeakOrNoSpeak` · options · thresholds · facade members · events & payloads · error codes · all 16 exports · debug handles
-6. **[Agent integration: barge-in & echo](06-agent-integration.md)** — the echo hazard · `setAgentSpeaking` contract · behavior while armed · the interrupt event · post-interrupt contract · AEC scope · no-AEC gating · a complete agent loop · pitfalls
+6. **[Agent integration: barge-in & echo](06-agent-integration.md)** — the echo hazard · `setAgentSpeaking` contract · behavior while armed · the interrupt event · post-interrupt contract · AEC scope per browser · the agent-audio route · OS-level AEC · no-AEC gating · a complete agent loop · pitfalls
 
 ### Architecture and methods
 

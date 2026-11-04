@@ -130,6 +130,9 @@
  *                                                      agent-voice-profile gate (WP-E4, D9 stretch) —
  *                                                      default OFF; drops agent-similar turns (suppression,
  *                                                      R7); fail-open; `gate` injects a ready instance (tests)
+ * @property {boolean} [halfDuplex]                     WP-E5 (M6 escape hatch, default false): while the agent
+ *                                                      flag is armed, speech detection is suspended entirely —
+ *                                                      no barge-in/interrupts; for IVR-style flows
  */
 
 /**

@@ -25,6 +25,7 @@ optional; fatal misconfiguration rejects with a `SpeakError` carrying a stable
 |---|---|---|
 | `mic` | `MediaTrackConstraints`, default widest AEC scope | Merged **per key** over the defaults `{ channelCount: 1, echoCancellation: { ideal: "all" }, noiseSuppression: true, autoGainControl: true }` (WP-E1 D1 — requests system-wide AEC as an *ideal*; never fails the request). E.g. `mic: { echoCancellation: false }` disables only AEC (activates stricter barge-in gating, [Chapter 6](06-agent-integration.md)) |
 | `strictGating` | `"auto" \| "on" \| "off"`, default `"auto"` | Stricter barge-in gating override (WP-E1 D5): `"auto"` = stricter when `degraded.aecScope` is `"none"`, or `"unknown"`/`"remote-only"` without an active agent-audio route; `"on"`/`"off"` force it |
+| `halfDuplex` | `boolean`, default `false` | WP-E5 (M6 escape hatch): while the agent flag is armed, speech detection is suspended entirely — no barge-in, no interrupts. For IVR-style flows where barge-in is unwanted. Costs barge-in (∞ while armed — by design); not the same as engine `pause()` |
 | `thresholds` | `Partial<Thresholds>`, merged over defaults | Detection thresholds — table in [§5.3](#53-thresholds) |
 | `engine` | `VadEngine` | Advanced: inject a custom engine (tests, experiments). Injecting one disables the automatic energy fallback unless you also pass `energyEngine` |
 | `energyEngine` | `VadEngine` | Advanced: replaces the default `EnergyVad` as the fallback target |
@@ -155,6 +156,8 @@ messages are prose, the codes are the contract.
 | `cdn-unavailable` | fatal* | neither the CDN scripts (`window.vad`) nor the npm package could be loaded → *the facade falls back to the energy engine* |
 | `engine-load-failed` | fatal* | ORT/model/MicVAD load or start threw → *energy fallback* |
 | `no-aec` | warning | echo cancellation not active on the mic track — stricter barge-in gating active, headphones recommended |
+| `aec-scope-limited` | warning | AEC scope unverifiable (browser-decided `true`) — the state where same-page audio leaks on Chromium; route agent audio ([§5.4a](#54a-createagentaudiorouteoptions)) or enable system-wide cancellation |
+| `aec-scope-fallback` | warning | system-wide AEC unavailable (missing OS permission) — fell back to the browser default (one re-request) |
 | `engine-fallback` | warning | running on the energy engine (`degraded.engine === "energy"`) |
 | `audio-pipeline` | runtime | AudioContext/capture failure at runtime |
 | `vad-no-frames` | runtime | engine started but produced no frames within 5 s — try reloading |

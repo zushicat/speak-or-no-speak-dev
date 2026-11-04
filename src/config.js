@@ -89,6 +89,13 @@ export const DEFAULTS = {
     profileUrl: "/src/gate/agent-voice-profile.json",
     modelUrl: "/vendor/wespeaker_en_voxceleb_resnet34.onnx",
   },
+  /**
+   * WP-E5 (M6 escape hatch): half-duplex mode — while the agent flag is
+   * armed, speech detection is suspended entirely (no barge-in, no
+   * interrupts). For IVR-style flows where barge-in is unwanted. Costs
+   * barge-in latency (∞ while armed — by design).
+   */
+  halfDuplex: false,
 };
 
 /**

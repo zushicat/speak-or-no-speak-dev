@@ -18,7 +18,11 @@ browser — no backend, no keys, no audio leaving the machine for detection. Its
 detection core is [Silero VAD](https://github.com/snakers4/silero-vad) (a small,
 noise-robust neural speech detector) wrapped in an **adaptive turn-endpointing
 state machine** with **browser echo cancellation (AEC)** as the echo-safety
-groundwork.
+groundwork — negotiated, measured, and reported honestly (`degraded.aecScope`,
+[Chapter 6 §6.6](06-agent-integration.md#66-echo-cancellation-scope)): the
+module requests the widest AEC scope, tells you what the browser actually
+cancels, and ships a route that makes your agent's own audio cancelable on
+every browser.
 
 The intended consumer is a **voice agent** — a chatbot or game avatar you talk
 to — where this module is the "ears" of the loop: it tells your app *when* to

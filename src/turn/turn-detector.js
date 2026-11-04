@@ -137,6 +137,15 @@ export class TurnDetector {
      * requirement (frame rms > noAecRmsFactor × rolling agent-playback mean).
      */
     this.noAecMode = false;
+    /**
+     * WP-E5 (M6 escape hatch): half-duplex mode — while the agent flag is
+     * armed, EVERY frame is treated as non-speech: no interrupt confirms
+     * accumulate, no barge-in. Turn accumulation continues per the matrix (a
+     * redemption-eligible turn still flushes on disarm — rule 3). NOT the
+     * same as engine pause() (which stops the mic tracks). For IVR-style
+     * flows where barge-in is unwanted.
+     */
+    this.halfDuplex = options.halfDuplex ?? false;
     /** @private rolling rms baseline while the agent flag is armed */
     this._rmsBaseline = new RmsBaseline(1000);
     /** @private audioMs timestamp of the first above-onset frame of the current confirm run */
@@ -241,8 +250,9 @@ export class TurnDetector {
       // speech — same rejection semantics as the echo gate; either gate alone
       // can reject. The predicate is sync + fail-open (latest window verdict).
       const voiceHit = this._voiceGate ? (this._voiceGate.isAgentVoice?.(f) ?? false) : false;
-      const speech = f.probability >= T.onsetSpeechThreshold && rmsGate && !echoHit && !voiceHit;
-      const silent = f.probability <= T.negativeSpeechThreshold;
+      // WP-E5 halfDuplex: while armed, every frame is non-speech — no barge-in.
+      const speech = !this.halfDuplex && f.probability >= T.onsetSpeechThreshold && rmsGate && !echoHit && !voiceHit;
+      const silent = this.halfDuplex ? true : f.probability <= T.negativeSpeechThreshold;
       const confirmNeed = this.noAecMode
         ? Math.max(T.bargeInConfirmFrames, Math.ceil(T.noAecBargeInConfirmMs / durMs))
         : T.bargeInConfirmFrames;

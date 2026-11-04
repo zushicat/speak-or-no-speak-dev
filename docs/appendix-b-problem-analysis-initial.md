@@ -165,9 +165,18 @@ myvad.start();
 
 ### F. Hybrid local pipeline: Silero VAD + adaptive endpointing + optional end-of-turn model + browser AEC ⭐ recommended
 
+> **ERRATUM (rev-8, 2026-11):** this appendix is a *historical document* —
+> preserved as written, not rewritten. Its claim below that "Chrome's AEC
+> cancels audio *the browser itself plays*" is **measured false** for
+> same-page playback on desktop Chromium (WebRTC-remote audio only;
+> `speechSynthesis` leaks) — corrected by
+> [analysis-rev-8 §3.1](../plans/rev-8/analysis-rev-8.md) and implemented in
+> [plan-rev-8-1](../plans/rev-8/plan-rev-8-1.md) (D1 scope negotiation +
+> WP-E2 agent-audio route).
+
 **What:** The architecture used in production voice-agent frameworks (LiveKit Agents, Pipecat, Vocode), assembled as a small self-contained module:
 
-1. **One mic stream with browser echo cancellation** — `getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })`. Chrome's AEC cancels audio *the browser itself plays* (TTS via audio element/WebAudio), which neutralizes hazard E1 for the common case.
+1. **One mic stream with browser echo cancellation** — `getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })`. ~~Chrome's AEC cancels audio *the browser itself plays* (TTS via audio element/WebAudio), which neutralizes hazard E1 for the common case.~~ *(see the erratum above — scope is per-browser; `echoCancellation: "all"` + the agent-audio route are the rev-8.1 fixes)*
 2. **Silero VAD via ONNX Runtime Web in a Web Worker** (WASM SIMD; optional WebGPU), frame-level speech probability at 32–96 ms granularity → S1 and the S3 trigger, ~100–150 ms interrupt latency.
 3. **Turn-end state machine (S2):** silence window with adaptive length (shorter after confident fluent speech, longer after fillers/hesitation), plus an optional **end-of-turn model** — e.g. [Smart Turn v3.2](https://github.com/pipecat-ai/smart-turn) (open source, BSD-2, Whisper-Tiny-based, ~8 M params, **8 MB int8**, 23 languages, ~10–100 ms inference, explicitly designed to run *only* when the VAD says silence). Its ONNX weights could be run in-browser via ONNX Runtime Web; no official JS package exists today, so treat this as an experiment with the silence-timeout fallback.
 4. **Barge-in mode (S3):** the module exposes `setAgentSpeaking(true/false)`. While true, the VAD stays hot, the confirmation window shrinks (~120–200 ms of sustained speech probability), and an `onInterrupt` event cancels the TTS/LLM stream. AEC + the confirmation window suppress echo false-positives.

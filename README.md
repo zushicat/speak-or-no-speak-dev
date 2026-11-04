@@ -17,10 +17,12 @@ A voice activity detector can tell you whether a frame sounds like speech. A tal
 | Decide when to answer | Uses a silence window that adapts to the current turn's speaking rhythm; interior pauses can remain one turn. |
 | Let the user interrupt | Has a dedicated agent-speaking mode and emits `onInterrupt` after confirmed speech. |
 | Keep the whole utterance | Buffers audio before speech onset and accumulates 16 kHz mono PCM through the end of the turn. |
-| Handle echo and engine failure | Requests browser echo cancellation, applies stricter interruption gating without it, and reports when it falls back from Silero to energy detection. |
+| Handle echo and engine failure | Requests the widest browser echo-cancellation scope, reports what the browser actually cancels (`degraded.aecScope`), ships a route that makes your agent's own audio cancelable on every browser, applies stricter interruption gating without AEC, and reports when it falls back from Silero to energy detection. |
 | Add language awareness when needed | Can ask an optional turn model whether an acoustically finished utterance sounds complete. |
 
 **Compared with using [`@ricky0123/vad-web`](https://github.com/ricky0123/vad) alone:** this project uses the same Silero speech classifier and adds turn timing, pause handling, interruption mode, and accumulated turn audio. It does not claim a more accurate underlying speech classifier. It also does not transcribe speech or generate replies; you connect your own STT, agent, and audio output.
+
+**Echo-cancellation honesty (measured, per browser):** a browser cancels exactly the audio it can *reference*. Chromium without the `"all"` scope cancels only WebRTC-remote audio — your `speechSynthesis` TTS leaks into the mic; the module reports this (`degraded.aecScope`) and ships `createAgentAudioRoute()` to fix it. Other apps' audio is only cancelled by OS-level AEC ([Chapter 6 §6.6](docs/06-agent-integration.md#66-echo-cancellation-scope), [§6.10](docs/06-agent-integration.md#610-os-level-echo-cancellation)).
 
 ## Try it locally
 
