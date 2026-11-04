@@ -175,6 +175,42 @@ export async function createAgentAudioRoute(options = {}) {
   /** Attach the shared API surface to the built route. @private */
   function finalize({ ctx, ownedContext, input, gain, mode, element, pc1, pc2 }) {
     let stopped = false;
+    /** @private reference-tap state (lazy — built on first subscribe) */
+    let tapNode = null;
+    let tapSink = null;
+    const refCbs = new Set();
+    const buildTap = async () => {
+      // Pass-through tap on the reference node: worklet first (posts Float32Array
+      // copies), ScriptProcessor fallback (engine-adapter pattern — SP is
+      // deprecated but universally supported).
+      try {
+        const src = "class Tap extends AudioWorkletProcessor{process(i){const c=i[0][0];if(c)this.port.postMessage(c.slice(0));return true}}registerProcessor('sons-echo-tap',Tap)";
+        const url = URL.createObjectURL(new Blob([src], { type: "text/javascript" }));
+        try { await ctx.audioWorklet.addModule(url); }
+        finally { URL.revokeObjectURL(url); }
+        tapNode = new AudioWorkletNode(ctx, "sons-echo-tap", { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1] });
+        tapNode.port.onmessage = (e) => { for (const cb of refCbs) { try { cb(e.data); } catch { /* listener error must not kill the tap */ } } };
+      } catch {
+        tapNode = ctx.createScriptProcessor(1024, 1, 1);
+        tapNode.onaudioprocess = (e) => {
+          const copy = e.inputBuffer.getChannelData(0).slice(0);
+          for (const cb of refCbs) { try { cb(copy); } catch { /* listener error must not kill the tap */ } }
+        };
+      }
+      // The tap needs a connected path to run; a zero-gain sink keeps it silent.
+      tapSink = ctx.createGain();
+      tapSink.gain.value = 0;
+      gain.connect(tapNode);
+      tapNode.connect(tapSink);
+      tapSink.connect(ctx.destination);
+    };
+    const teardownTap = () => {
+      try { tapNode && (tapNode.onaudioprocess = null, tapNode.port && (tapNode.port.onmessage = null), tapNode.disconnect()); } catch { /* noop */ }
+      try { tapSink && tapSink.disconnect(); } catch { /* noop */ }
+      try { gain.disconnect(tapNode); } catch { /* noop */ }
+      tapNode = null;
+      tapSink = null;
+    };
     return {
       input,
       gain,
@@ -190,13 +226,30 @@ export async function createAgentAudioRoute(options = {}) {
        * the pre-loopback tap for the WP-E3 correlation gate.
        */
       getReferenceNode() { return gain; },
-      /** Idempotent teardown: pcs, element, owned context. */
+      /**
+       * WP-E3: subscribe to reference-tap frames (Float32Array copies at the
+       * route context's sample rate). The tap is built lazily on the first
+       * subscription and torn down when the last one unsubscribes.
+       * @param {(samples: Float32Array) => void} cb
+       * @returns {() => void} unsubscribe
+       */
+      onReferenceFrame(cb) {
+        refCbs.add(cb);
+        if (!tapNode) buildTap().catch(() => { /* gate stays off without a tap */ });
+        return () => {
+          refCbs.delete(cb);
+          if (refCbs.size === 0) teardownTap();
+        };
+      },
+      /** Idempotent teardown: pcs, element, tap, owned context. */
       async stop() {
         if (stopped) return;
         stopped = true;
         if (pc1) { try { pc1.close(); } catch { /* noop */ } }
         if (pc2) { try { pc2.close(); } catch { /* noop */ } }
         try { input.disconnect(); gain.disconnect(); } catch { /* noop */ }
+        teardownTap();
+        refCbs.clear();
         if (element) {
           try { element.pause(); element.srcObject = null; element.remove(); } catch { /* noop */ }
         }

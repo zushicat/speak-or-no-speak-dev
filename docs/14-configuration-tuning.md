@@ -36,6 +36,13 @@ the **why** and the **how to tune**.
 | `noAecBargeInConfirmMs` (300) | The wider barge-in confirm used when AEC is inactive — the extra margin against the agent's own leaked voice. |
 | `noAecRmsFactor` (2) | Without AEC, a speech frame must also be **louder than 2× the rolling mean rms of the last second of agent-only playback** — a TTS-leakage guard that statistical confirmation alone cannot provide. |
 | `modelTimeoutMs` (300) | Max wait for the semantic turn model before failing open — bounds how long the model can *hold* a turn. |
+| `echoGate.correlationThreshold` (0.75) | WP-E3 (default **off**, `echoGate.enabled`): a frame correlating ≥ this against the recent agent-reference audio is classified as echo *regardless of its rms* — the loud-TTS case the `noAecRmsFactor` gate misses. Measured on real Chrome (AGC + room): real echo hovers near the threshold → ~50 % catch rate at 0.75; real user speech stays below (barge-in intact, 30/30 interrupts in the WP-E3 control). **Lower it only with calibration data** — the cost of a false positive is swallowed user speech. |
+| `echoGate.probeEveryFrames` (4) | Correlation probes per frame cadence; un-probed frames inherit the last verdict (echo bursts are contiguous). Raise to 8 if the CPU budget suffers (measured cost at 4: p95 0.102 ms/frame, budget 8 ms). |
+| `echoGate.maxDelayMs` (500) | The render→capture delay search range (loopback jitter + D/A–A/D + acoustic path). Widen only if your output chain is slower than ~500 ms. |
+| `echoGate.lagStride` (16 ≈ 1 ms) | Budget knob for the delay-search resolution. |
+| `echoGate.suppressOnset` (false) | Phase 2 (opt-in): also reject echo in the READY state. Default off — a correlation false positive must never swallow real user speech un-armed. |
+| `voiceGate.threshold` (0.8) | WP-E4 (default **off**, `voiceGate.enabled`): cosine similarity vs the agent voice profile above which a completed turn is dropped (suppression, R7). Measured separation: same-voice 0.945 · different-voice 0.393. Raise it to drop fewer turns (safer for users who resemble the agent voice); lower only with calibration data. |
+| `voiceGate.profileUrl` / `modelUrl` | The committed profile JSON (`src/gate/agent-voice-profile.json`, built offline via `scripts/build-agent-voice-profile.mjs`) and the speaker-embedding ONNX (gitignored `/vendor/`, SmartTurnModel-style manual download). Bundle your own profile for your agent's voice. |
 
 ## 14.3 The 32 ms recalibration story
 

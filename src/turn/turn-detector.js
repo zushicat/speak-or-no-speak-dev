@@ -40,6 +40,7 @@
  */
 
 import { RingBuffer } from "./ring-buffer.js";
+import { echoCorrelation } from "./echo-correlation.js";
 import { DEFAULTS, mergeOptions } from "../config.js";
 
 /** @typedef {import("../types.js").VadFrame} VadFrame */
@@ -141,6 +142,25 @@ export class TurnDetector {
     /** @private audioMs timestamp of the first above-onset frame of the current confirm run */
     this._interruptVoiceAtMs = 0;
 
+    /**
+     * WP-E3 coherence echo gate (D9) — default OFF. Active only while the
+     * agent flag is armed AND a reference is registered
+     * (`pushEchoReference`); an echo-classified frame does not accumulate
+     * interrupt-confirm. Un-probed frames inherit the last verdict.
+     * @type {import("../types.js").EchoGateOptions}
+     */
+    this.echoGate = merged.echoGate;
+    /** @private reference ring: (windowMs + maxDelayMs) worth of 16 kHz samples ≈ 12 k floats */
+    this._echoRef = null;
+    this._echoRefPos = 0;
+    this._echoRefFill = 0;
+    /** @private last probe verdict (inherited by un-probed frames) */
+    this._echoVerdict = false;
+    /** @private frame counter for the probe cadence */
+    this._echoFrameCounter = 0;
+    /** @private scratch buffer for the chronological reference read (allocated once) */
+    this._echoScratch = null;
+
     /** @type {Float32Array|null} pre-speech + confirm-window audio, flushed at onset */
     this.pad = null;
     /** @type {Float32Array[]} turn audio frames accumulated while listening/pause */
@@ -154,8 +174,26 @@ export class TurnDetector {
     this.traces = this.debug ? [] : null;
 
     /** @type {(() => void)|null} */ this.onSpeechStart = null;
-    /** @type {((e: import("../types.js").TurnEndEvent) => void)|null} */ this.onTurnEnd = null;
+    /** @type {((e: import("../types.js").TurnEndEvent) => void) | null} */ this.onTurnEnd = null;
     /** @type {((info: import("../types.js").InterruptInfo) => void)|null} */ this.onInterrupt = null;
+    /**
+     * WP-E4: the voice gate's frame-level hook — a sync predicate consulted
+     * in the armed branch (and in READY when suppressOnset is on). The gate
+     * object exposes the LATEST rolling-window verdict (scoring runs async on
+     * a cadence). Null = gate absent.
+     * @type {{ isAgentVoice: (frame: VadFrame) => boolean }|null}
+     */
+    this._voiceGate = null;
+  }
+
+  /**
+   * WP-E4: register the voice gate's frame-level hook (see 4.4 of the WP-E4
+   * plan). The predicate must be sync and never throw (fail-open); it reads
+   * the gate's latest rolling-window verdict.
+   * @param {{ isAgentVoice: (frame: VadFrame) => boolean }|null} hooks
+   */
+  setVoiceGate(hooks) {
+    this._voiceGate = hooks ?? null;
   }
 
   /**
@@ -194,7 +232,16 @@ export class TurnDetector {
       // Stricter gating without AEC: rms must exceed factor × playback mean
       // (the mean is 0 while the baseline fills → gate passes).
       const rmsGate = !this.noAecMode || f.rms > T.noAecRmsFactor * baseline;
-      const speech = f.probability >= T.onsetSpeechThreshold && rmsGate;
+      // WP-E3: echo-classified frames are NOT speech — they do not accumulate
+      // interrupt-confirm (the rms gate stays orthogonal; either gate alone
+      // can reject). Echo frames still feed the rolling baseline above — they
+      // ARE playback.
+      const echoHit = this.#echoGateVerdict(f);
+      // WP-E4: agent-voice-similar frames (rolling-window verdict) are NOT
+      // speech — same rejection semantics as the echo gate; either gate alone
+      // can reject. The predicate is sync + fail-open (latest window verdict).
+      const voiceHit = this._voiceGate ? (this._voiceGate.isAgentVoice?.(f) ?? false) : false;
+      const speech = f.probability >= T.onsetSpeechThreshold && rmsGate && !echoHit && !voiceHit;
       const silent = f.probability <= T.negativeSpeechThreshold;
       const confirmNeed = this.noAecMode
         ? Math.max(T.bargeInConfirmFrames, Math.ceil(T.noAecBargeInConfirmMs / durMs))
@@ -237,7 +284,15 @@ export class TurnDetector {
 
     switch (this.state) {
       case "ready": {
-        if (f.probability >= T.onsetSpeechThreshold) {
+        // WP-E3 phase 2 (opt-in `suppressOnset`): reject echo in READY so
+        // residual echo cannot start a turn un-armed. Default off — with a
+        // working AEC reference (E2) the un-armed case is handled, and a
+        // correlation false positive must never swallow real user speech.
+        const echoHit = this.echoGate.suppressOnset ? this.#echoGateVerdict(f) : false;
+        const voiceHit = this.echoGate.suppressOnset && this._voiceGate
+          ? (this._voiceGate.isAgentVoice?.(f) ?? false)
+          : false;
+        if (f.probability >= T.onsetSpeechThreshold && !echoHit && !voiceHit) {
           this.confirm++;
           this.confirmSpeechMs += durMs;
         } else {
@@ -330,6 +385,101 @@ export class TurnDetector {
     this.paused = true;
   }
 
+  /**
+   * WP-E3: feed reference audio (the agent's render tap, via the facade's
+   * `setAgentAudioReference`). Samples are resampled (box-average) to the
+   * detector's rate and kept in a fixed-capacity ring of
+   * `windowMs + maxDelayMs` (≈ 12 k floats at 16 kHz). Without a reference
+   * feed the echo gate is a no-op — either signal alone is not enough (D9).
+   * @param {Float32Array} samples  reference samples at `sourceSampleRate`
+   * @param {number} [sourceSampleRate]  the tap's rate (default: detector rate)
+   */
+  pushEchoReference(samples, sourceSampleRate = this.sampleRate) {
+    const g = this.echoGate;
+    const cap = Math.ceil(((g.windowMs + g.maxDelayMs) / 1000) * this.sampleRate);
+    if (!this._echoRef || this._echoRef.length !== cap) {
+      this._echoRef = new Float32Array(cap);
+      this._echoRefPos = 0;
+      this._echoRefFill = 0;
+    }
+    const ratio = sourceSampleRate / this.sampleRate;
+    if (ratio <= 1) {
+      // same rate (or upsample-requested — treated as 1:1)
+      this.#writeEchoRef(samples);
+      return;
+    }
+    // box-average downsample, same math as the energy engine
+    const groups = Math.floor(samples.length / ratio);
+    for (let gr = 0; gr < groups; gr++) {
+      const start = Math.floor(gr * ratio);
+      const end = Math.min(samples.length, Math.floor((gr + 1) * ratio));
+      let sum = 0;
+      for (let i = start; i < end; i++) sum += samples[i];
+      const v = sum / Math.max(1, end - start);
+      this._echoRef[this._echoRefPos] = v;
+      this._echoRefPos = (this._echoRefPos + 1) % cap;
+      this._echoRefFill = Math.min(cap, this._echoRefFill + 1);
+    }
+  }
+
+  /** @private write raw (already detector-rate) samples into the echo ring */
+  #writeEchoRef(samples) {
+    const cap = this._echoRef.length;
+    for (let i = 0; i < samples.length; i++) {
+      this._echoRef[this._echoRefPos] = samples[i];
+      this._echoRefPos = (this._echoRefPos + 1) % cap;
+      this._echoRefFill = Math.min(cap, this._echoRefFill + 1);
+    }
+  }
+
+  /**
+   * WP-E3: the echo verdict for this frame, honoring the probe cadence
+   * (probe every `probeEveryFrames` frames; un-probed frames inherit the last
+   * verdict — echo bursts are contiguous). Returns false whenever the gate is
+   * off or no reference has been fed yet.
+   * @private
+   * @param {VadFrame} f
+   * @returns {boolean} true = this frame is classified as echo
+   */
+  #echoGateVerdict(f) {
+    const g = this.echoGate;
+    if (!g.enabled) return false;
+    this._echoFrameCounter++;
+    const probe = (this._echoFrameCounter - 1) % g.probeEveryFrames === 0;
+    if (!probe) return this._echoVerdict;
+    if (!this._echoRef || this._echoRefFill < Math.ceil((g.windowMs / 1000) * this.sampleRate)) {
+      this._echoVerdict = false; // reference still filling — no claim
+      return false;
+    }
+    // chronological read into the reusable scratch buffer
+    const cap = this._echoRef.length;
+    if (!this._echoScratch || this._echoScratch.length !== cap) this._echoScratch = new Float32Array(cap);
+    if (this._echoRefFill < cap) {
+      this._echoScratch.set(this._echoRef.subarray(0, this._echoRefFill));
+    } else {
+      this._echoScratch.set(this._echoRef.subarray(this._echoRefPos), 0);
+      this._echoScratch.set(this._echoRef.subarray(0, this._echoRefPos), cap - this._echoRefPos);
+    }
+    const { corr, delaySamples } = echoCorrelation(f.frame, this._echoScratch, {
+      windowSamples: g.windowMs ? Math.ceil((g.windowMs / 1000) * this.sampleRate) : 250,
+      maxDelaySamples: Math.ceil((g.maxDelayMs / 1000) * this.sampleRate),
+      decimation: g.decimation,
+      lagStride: g.lagStride,
+    });
+    this._echoVerdict = corr >= g.correlationThreshold;
+    if (this._echoVerdict && this.traces) {
+      this.traces.push({
+        audioMs: Math.round(this._audioMs),
+        event: "echo-gate-hit",
+        detail: +corr.toFixed(3),
+        corr: +corr.toFixed(3),
+        delaySamples,
+      });
+      if (this.traces.length > 100) this.traces.shift();
+    }
+    return this._echoVerdict;
+  }
+
   resume() {
     this.paused = false;
   }
@@ -353,6 +503,10 @@ export class TurnDetector {
     this._evalPending = false;
     this._evalGeneration++;
     this._ring?.clear();
+    // WP-E3: stale reference/verdict must not survive a stop/start cycle.
+    this._echoVerdict = false;
+    this._echoRefFill = 0;
+    this._echoRefPos = 0;
   }
 
   /** @private current turn's rhythm stats for redemptionFor */

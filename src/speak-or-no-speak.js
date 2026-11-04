@@ -22,6 +22,7 @@ import { SileroVadAdapter } from "./vad/silero-vad-adapter.js";
 import { EnergyVad } from "./vad/energy-vad.js";
 import { AEC_SCOPE, strictGatingActive } from "./vad/aec-scope.js";
 import { TurnDetector } from "./turn/turn-detector.js";
+import { AgentVoiceGate } from "./gate/agent-voice-gate.js";
 import { DEFAULTS, mergeOptions } from "./config.js";
 import { ERROR_CODES, SpeakError } from "./errors.js";
 
@@ -47,6 +48,7 @@ export async function createSpeakOrNoSpeak(options = {}) {
     thresholds: opts.thresholds,
     debug: opts.debug,
     turnModel: opts.turnModel, // WP8: optional semantic end-of-turn model
+    echoGate: opts.echoGate,   // WP-E3: coherence echo gate (default off, D9)
   });
 
   let started = false;
@@ -55,6 +57,24 @@ export async function createSpeakOrNoSpeak(options = {}) {
    * (see `setAgentAudioRouted`). Feeds the stricter-gating rule; reset on stop().
    */
   let agentAudioRouted = false;
+  /** WP-E3: unsubscribe handle for the echo-reference feed (setAgentAudioReference). */
+  let echoRefUnsubscribe = null;
+  /**
+   * WP-E4 (D9, stretch): the agent-voice-profile gate — default OFF. When
+   * enabled, completed turns are scored against the agent voice profile and
+   * agent-similar turns are dropped (suppression, never a hard gate; R7).
+   * Fail-open: any gate error emits the turn.
+   */
+  const voiceGate = opts.voiceGate?.enabled
+    ? (opts.voiceGate.gate ?? new AgentVoiceGate(opts.voiceGate))
+    : null;
+  /** order-preserving queue for async turn-end gating */
+  let turnEndChain = Promise.resolve();
+  /** one-time voice-gate warning flag */
+  let voiceGateWarned = false;
+  /** WP-E4: the voice gate's frame-level hook is consulted while armed (or
+   *  with suppressOnset, also in READY) — idle sessions skip scoring. */
+  const suppressOnset = opts.echoGate?.suppressOnset ?? false;
 
   /**
    * The engine's honest AEC scope (WP-E1). Engines that carry `aecScope`
@@ -91,6 +111,10 @@ export async function createSpeakOrNoSpeak(options = {}) {
     eng.onFrame((frame) => {
       detector.onFrame(frame);
       if (typeof opts.onLevel === "function") opts.onLevel(frame.rms);
+      // WP-E4: feed the voice gate's rolling window (scoring runs only while
+      // the detector consumes verdicts). Guarded: injected gates may be
+      // turn-level-only.
+      voiceGate?.feed?.(frame.frame, detector.agentSpeaking || suppressOnset);
     });
     eng.onError((err) => opts.onError?.(err));
   };
@@ -106,8 +130,34 @@ export async function createSpeakOrNoSpeak(options = {}) {
     async start() {
       if (started) return;
       detector.onSpeechStart = () => opts.onSpeechStart?.();
-      detector.onTurnEnd = (event) => opts.onTurnEnd?.(event);
+      detector.onTurnEnd = (event) => {
+        if (!voiceGate) {
+          opts.onTurnEnd?.(event);
+          return;
+        }
+        // WP-E4: score the turn against the agent voice profile; drop
+        // agent-similar turns. Serialized so async scoring keeps event order.
+        turnEndChain = turnEndChain.then(async () => {
+          try {
+            const verdict = await voiceGate.scoreTurn(event.audio);
+            if (verdict?.isAgent) return; // suppressed silently (R7)
+            opts.onTurnEnd?.(event);
+          } catch (err) {
+            // fail-open: the gate never loses a user turn
+            if (!voiceGateWarned) {
+              voiceGateWarned = true;
+              opts.onError?.({
+                code: ERROR_CODES.AUDIO_PIPELINE,
+                message: `Voice gate failed (${err?.message ?? err}) — turns are emitted ungated.`,
+              });
+            }
+            opts.onTurnEnd?.(event);
+          }
+        });
+      };
       detector.onInterrupt = (info) => opts.onInterrupt?.(info);
+      // WP-E4: register the voice gate's frame-level hook (sync, fail-open).
+      detector.setVoiceGate(voiceGate ? { isAgentVoice: () => voiceGate.isAgentVoiceSync() } : null);
 
       try {
         wireEngine(engine);
@@ -146,6 +196,10 @@ export async function createSpeakOrNoSpeak(options = {}) {
       started = false;
       // D5: the route declaration is per-session — a fresh start re-applies it.
       agentAudioRouted = false;
+      // WP-E3: the reference feed is per-session too (its tap dies with the route).
+      if (echoRefUnsubscribe) { echoRefUnsubscribe(); echoRefUnsubscribe = null; }
+      // WP-E4: no stale window verdicts into a fresh session.
+      voiceGate?.resetWindow?.();
     },
 
     /**
@@ -167,6 +221,26 @@ export async function createSpeakOrNoSpeak(options = {}) {
     setAgentAudioRouted(active) {
       agentAudioRouted = active === true;
       if (started) applyNoAecMode();
+    },
+
+    /**
+     * WP-E3: register the agent-audio route as the ECHO REFERENCE source —
+     * its render tap feeds `detector.pushEchoReference` (data for the
+     * correlation gate). Accepts a route-like object exposing
+     * `onReferenceFrame(cb)`; pass the route created by
+     * `createAgentAudioRoute()`. The (gating-policy) `setAgentAudioRouted`
+     * flag and this (data) feed are independent — either without the other
+     * leaves the gate a no-op. Unsubscribed by `stop()`.
+     * @param {{ onReferenceFrame: (cb: (samples: Float32Array) => void) => () => void }|null} reference
+     */
+    setAgentAudioReference(reference) {
+      if (echoRefUnsubscribe) { echoRefUnsubscribe(); echoRefUnsubscribe = null; }
+      if (reference && typeof reference.onReferenceFrame === "function") {
+        const srcRate = reference.context?.sampleRate ?? 16000;
+        echoRefUnsubscribe = reference.onReferenceFrame((samples) => {
+          try { detector.pushEchoReference(samples, srcRate); } catch { /* gate must never break detection */ }
+        });
+      }
     },
 
     /**
@@ -198,6 +272,10 @@ export async function createSpeakOrNoSpeak(options = {}) {
     },
     get _engine() {
       return engine;
+    },
+    /** WP-E4: the voice gate instance (null when disabled) — stats + tests */
+    get _voiceGate() {
+      return voiceGate;
     },
   };
 

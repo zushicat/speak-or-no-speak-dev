@@ -37,11 +37,13 @@ test("resolveRouteMode: vendor guard + junk input → safe default (loopback)", 
 
 // --------------------------------------------------------- 2. export surface
 
-test("src/index.js export surface includes createAgentAudioRoute (F8, 17 exports)", async () => {
+test("src/index.js export surface includes createAgentAudioRoute (F8)", async () => {
   assert.equal(typeof index.createAgentAudioRoute, "function");
   const names = Object.keys(index);
   assert.ok(names.includes("createAgentAudioRoute"));
-  assert.equal(names.length, 17, `export surface grew 16 → 17, got: ${names.join(", ")}`);
+  // surface grows per WP (rev-2: 16 → WP-E2: 17 → WP-E4: 20 with the voice
+  // gate); the authoritative exact list lives in test/bundle-verify-main.js.
+  assert.equal(names.length, 20, `got: ${names.join(", ")}`);
 });
 
 // ------------------------------------------------ 3. Node import + guards

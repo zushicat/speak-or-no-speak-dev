@@ -136,6 +136,18 @@
           instance = await createSpeakOrNoSpeak({
             mic,
             turnModel: smartTurn.checked ? smartTurnModel : undefined,
+            // WP-E1 D5 + WP-E3/E4 (D9) test hooks:
+            //   `?strictgating=on|off` forces the stricter-gating rule,
+            //   `?echogate=1` enables the coherence echo gate,
+            //   `?voicegate=1` enables the agent-voice-profile gate
+            //   (all default OFF).
+            strictGating: new URLSearchParams(location.search).get("strictgating") ?? undefined,
+            echoGate: new URLSearchParams(location.search).has("echogate")
+              ? { enabled: true }
+              : undefined,
+            voiceGate: new URLSearchParams(location.search).has("voicegate")
+              ? { enabled: true }
+              : undefined,
             onSpeechStart: () => {
               label.textContent = "listening";
             },
@@ -171,6 +183,10 @@
               const forced = new URLSearchParams(location.search).get("routemode");
               route = await createAgentAudioRoute(forced ? { mode: forced } : {});
               instance.setAgentAudioRouted(true);
+              // WP-E3: the route is also the echo-reference data feed — the
+              // correlation gate (if enabled via ?echogate=1) classifies the
+              // mic frames against this reference.
+              instance.setAgentAudioReference(route);
               voiceNote.textContent = ` · route: ${route.mode}`;
             } catch (routeErr) {
               route = null;

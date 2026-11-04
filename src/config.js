@@ -58,11 +58,37 @@ export const DEFAULTS = {
   /** record state-transition traces on the detector */
   debug: false,
   /**
-   * WP-E1 D5: stricter barge-in gating override. "auto" (default) applies the
-   * scope-aware rule (stricter when scope is "none", or "unknown"/
-   * "remote-only" without an active agent-audio route); "on"/"off" force it.
+   * Stricter-gating override.
    */
   strictGating: "auto",
+  /**
+   * WP-E3 coherence echo gate (D9) — correlation-based echo classification,
+   * defense-in-depth ON TOP of AEC. Ships default-OFF; see
+   * src/turn/echo-correlation.js. `lagStride` (raw samples, 1 ms @16 kHz) is
+   * the CPU-budget knob for the delay search.
+   */
+  echoGate: {
+    enabled: false,            // master switch
+    correlationThreshold: 0.75,
+    maxDelayMs: 500,           // render→capture delay search range
+    windowMs: 250,             // reference history the detector must keep
+    decimation: 2,             // 16 kHz → 8 kHz effective search rate
+    lagStride: 16,             // raw-sample lag step (1 ms @16 kHz)
+    probeEveryFrames: 4,       // probe cadence; un-probed frames inherit the verdict
+    suppressOnset: false,      // phase 2: also reject echo in the READY state
+  },
+  /**
+   * WP-E4 (D9, stretch): agent-voice-profile gate — default OFF. Scores
+   * completed turns against the agent voice profile (built offline via
+   * scripts/build-agent-voice-profile.mjs) and drops agent-similar turns
+   * (suppression, R7); fail-open on any model error.
+   */
+  voiceGate: {
+    enabled: false,
+    threshold: 0.8, // measured separation: same-voice 0.945 · different-voice 0.393
+    profileUrl: "/src/gate/agent-voice-profile.json",
+    modelUrl: "/vendor/wespeaker_en_voxceleb_resnet34.onnx",
+  },
 };
 
 /**

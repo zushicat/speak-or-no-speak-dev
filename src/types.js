@@ -124,6 +124,40 @@
  *                                                      (WP-E1 D5; default "auto" = scope-aware rule:
  *                                                      stricter on scope "none", or "unknown"/
  *                                                      "remote-only" without an active agent-audio route)
+ * @property {Partial<EchoGateOptions>} [echoGate]      coherence echo gate (WP-E3, D9) —
+ *                                                      default OFF; see the EchoGateOptions typedef
+ * @property {Partial<VoiceGateOptions> & {gate?: any}} [voiceGate]
+ *                                                      agent-voice-profile gate (WP-E4, D9 stretch) —
+ *                                                      default OFF; drops agent-similar turns (suppression,
+ *                                                      R7); fail-open; `gate` injects a ready instance (tests)
+ */
+
+/**
+ * WP-E4 agent-voice-profile gate options (D9 stretch) — default OFF.
+ * Defaults in src/config.js.
+ *
+ * @typedef {Object} VoiceGateOptions
+ * @property {boolean} enabled    master switch (default false)
+ * @property {number} threshold   cosine-similarity threshold (0.8; measured
+ *                                separation: same-voice 0.945 · different-voice 0.393)
+ * @property {string} profileUrl  the committed profile JSON
+ *                                (src/gate/agent-voice-profile.json — built offline)
+ * @property {string} modelUrl    the speaker-embedding ONNX (gitignored /vendor/)
+ */
+
+/**
+ * WP-E3 coherence echo gate options (D9) — correlation-based echo
+ * classification on top of AEC, default OFF. Defaults in src/config.js.
+ *
+ * @typedef {Object} EchoGateOptions
+ * @property {boolean} enabled                master switch (default false)
+ * @property {number} correlationThreshold    0.75 — corr ≥ this classifies echo
+ * @property {number} maxDelayMs              500 — render→capture delay search range
+ * @property {number} windowMs                250 — reference history the detector keeps
+ * @property {number} decimation              2 — search at 8 kHz effective
+ * @property {number} lagStride               16 — raw-sample lag step (1 ms @16 kHz, budget knob)
+ * @property {number} probeEveryFrames        4 — probe cadence; un-probed frames inherit the verdict
+ * @property {boolean} suppressOnset          false — phase 2: also reject echo in READY (opt-in)
  */
 
 /**
@@ -136,6 +170,8 @@
  * @property {(active: boolean) => void} setAgentAudioRouted
  *        WP-E1 D5/D6: declare the agent audio plays through a cancelable route
  *        (createAgentAudioRoute, WP-E2); feeds the stricter-gating rule; reset by stop()
+ * @property {(reference: { onReferenceFrame: (cb: (samples: Float32Array) => void) => () => void }|null) => void} setAgentAudioReference
+ *        WP-E3: register the route as the echo-reference data feed for the correlation gate
  * @property {ModuleState} state
  * @property {{ aec: boolean, engine: "silero" | "energy", aecScope: AecScope }} degraded
  */

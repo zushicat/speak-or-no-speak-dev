@@ -84,7 +84,8 @@ const route = await createAgentAudioRoute();   // inside the same click that sta
 instance.setAgentAudioRouted(true);            // feed the stricter-gating rule
 // … wire your TTS source:
 mySourceNode.connect(route.input);             // the ONLY wiring — never also to ctx.destination
-route.gain.value = 0.8;                        // volume lives HERE (the output element stays at 1.0)
+route.gain.gain.value = 0.8;                   // volume lives HERE (route.gain is the GainNode;
+                                               // its .gain AudioParam holds the value; D8)
 // … later:
 await route.stop();
 instance.setAgentAudioRouted(false);
@@ -93,7 +94,7 @@ instance.setAgentAudioRouted(false);
 | Member | Meaning |
 |---|---|
 | `input` → `GainNode` | connect your TTS source here — the only contract |
-| `gain` → `GainNode` | volume control (pre-loopback, inside the AEC reference — [D8]) |
+| `gain` → `GainNode` | volume control (pre-loopback, inside the AEC reference — [D8]): set `route.gain.gain.value` (the AudioParam) |
 | `element` / `outputElement` | the audible `<audio autoplay playsinline>` (loopback only); do not re-route or re-volume it |
 | `mode` → `"loopback" \| "direct"` | resolved mode: `"auto"` = WebKit→direct, else loopback; explicit `"loopback"`/`"direct"` wins (`?routemode=` in the demo) |
 | `ready` | resolves when the route carries audio |
@@ -162,7 +163,33 @@ messages are prose, the codes are the contract.
 instead of failing the page. `humanMessage(code)` returns a ready-made UI
 sentence for every code — the demo maps all errors through it.
 
-## 5.7 All 17 exports
+## 5.6b `AgentVoiceGate` — the agent-voice-profile gate (WP-E4, stretch)
+
+Optional voice-identity suppression (D9, default **off**): completed turns are
+embedded through a speaker-verification model and compared against a profile
+built offline from the agent's own voice; agent-similar turns are dropped
+(suppression, never a hard gate — worst case: user speech briefly discounted,
+R7). Fail-open on any model error: the turn is emitted ungated.
+
+```js
+// one-time offline: build the profile from your agent voice sample
+//   node scripts/build-agent-voice-profile.mjs   → src/gate/agent-voice-profile.json
+// (model: vendor/wespeaker_en_voxceleb_resnet34.onnx — manual download, gitignored)
+const sons = await createSpeakOrNoSpeak({
+  voiceGate: { enabled: true },   // threshold 0.8 default; profileUrl/modelUrl overridable
+});
+```
+
+- Scoring runs at TURN END only (~33 ms native / ~100–300 ms wasm per turn —
+  never in the frame path); the first scored turn pays the model load.
+- Measured separation (reference machine): same-voice **0.945** ·
+  different-voice **0.393** → default threshold **0.8** (conservative —
+  higher drops fewer turns, i.e. safer for user speech).
+- `sons._voiceGate` exposes `{ scored, dropped }` for telemetry.
+- Knobs: [§14.2](14-configuration-tuning.md#142-every-threshold-explained)
+  (`voiceGate.*`).
+
+## 5.7 All 20 exports
 
 `import { … } from "speak-or-no-speak"` (npm) / `./src/index.js`
 ([`src/index.js`](../src/index.js)) / `./speak-or-no-speak.esm.js` (bundle) /
@@ -172,6 +199,8 @@ sentence for every code — the demo maps all errors through it.
 |---|---|
 | `createSpeakOrNoSpeak` | the facade factory ([§5.1](#51-createspeakornospeakoptions)) — all you need for standard use |
 | `createAgentAudioRoute` | cancelable agent-audio route ([§5.4a](#54a-createagentaudiorouteoptions) — WP-E2) |
+| `AgentVoiceGate` | agent-voice-profile gate ([§5.6b](#56b-agentvoicegate--the-agent-voice-profile-gate-wp-e4-stretch) — WP-E4) |
+| `isAgentVoice` / `cosineSimilarity` | the gate's pure decision helpers (unit-testable) |
 | `SileroVadAdapter` | default Silero v5 engine adapter (advanced: construct + pass as `engine`) |
 | `EnergyVad` | energy-based fallback engine (degraded, noise-blind) |
 | `energyProbability` | pure RMS-vs-noise-floor probability helper (unit-testable) |
