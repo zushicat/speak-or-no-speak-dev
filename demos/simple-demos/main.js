@@ -4,8 +4,8 @@
  * this file maps facade events → DOM, toggles the microphone, and plays an
  * ambient background track for noise-robustness testing.
  */
-import { createSpeakOrNoSpeak, humanMessage, SmartTurnModel, createAgentAudioRoute } from "../src/index.js";
-import { CloudStubAdapter } from "../src/stt/cloud-stub-adapter.js";
+import { createSpeakOrNoSpeak, humanMessage, SmartTurnModel, createAgentAudioRoute } from "../../src/index.js";
+import { CloudStubAdapter } from "../../src/stt/cloud-stub-adapter.js";
 
 const button = document.getElementById("start");
 const label = document.getElementById("label");
@@ -293,7 +293,7 @@ async function ensureVoiceBuffer() {
   const ab = await res.arrayBuffer();
   const decodeCtx = new AudioContext(); // one-off decode (route ctx is private by contract)
   try { voiceBuffer = await decodeCtx.decodeAudioData(ab); }
-  finally { decodeCtx.close().catch(() => {}); }
+  finally { decodeCtx.close().catch(() => { }); }
   return voiceBuffer;
 }
 
