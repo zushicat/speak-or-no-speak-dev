@@ -2,15 +2,16 @@
 
 > Part of the [Speak Or No Speak documentation](README.md) · prev: [Chapter 2](02-getting-started.md) · next: [Chapter 4 — Embedding](04-embedding.md)
 
-The demo at <http://localhost:5173/demo/> is the showcase of the module. It is
-deliberately **wiring only**: [`demo/main.js`](../demo/main.js) maps module
+The demo at <http://localhost:5173/demos/simple-demos/> is the showcase of the
+module. It is deliberately **wiring only**:
+[`demos/simple-demos/main.js`](../demos/simple-demos/main.js) maps module
 events to the DOM and contains **no detection logic** — all onset/turn/barge-in
 decisions live in the facade's `TurnDetector`. That makes the demo a template
 for your own integration (Chapter 4).
 
 ## 3.1 Page anatomy
 
-Every element of [`demo/index.html`](../demo/index.html), top to bottom:
+Every element of [`demos/simple-demos/index.html`](../demos/simple-demos/index.html), top to bottom:
 
 | Element | id | Purpose |
 |---|---|---|
@@ -48,7 +49,7 @@ Note what the indicator does *not* show: discarded turns (coughs shorter than
 ## 3.3 Microphone start/stop toggle
 
 The button persists and toggles (`toggleMicrophone` in
-[`demo/main.js`](../demo/main.js)):
+[`demos/simple-demos/main.js`](../demos/simple-demos/main.js)):
 
 - **Start**: creates a fresh facade instance, wires the callbacks, `start()`s
   it, exposes it as `window.__sons` (debug handle for tooling), disables the
@@ -62,7 +63,8 @@ The button persists and toggles (`toggleMicrophone` in
 
 ## 3.4 Background sound row — ambient noise on purpose
 
-The row plays one of five ambient MP3s from [`demo/assets/`](../demo/assets/sources.md)
+The row plays one of five ambient MP3s from
+[`demos/simple-demos/assets/`](../demos/simple-demos/assets/sources.md)
 on a loop, with its own start/stop button and a live volume slider (default
 50 %):
 
@@ -75,7 +77,7 @@ on a loop, with its own start/stop button and a live volume slider (default
 | Street Sounds With People Talking | `street-sounds-people-talking.mp3` | 0:12.3 |
 
 All sounds are from [Pixabay](https://pixabay.com/) under the Pixabay Content
-License (see [`demo/assets/sources.md`](../demo/assets/sources.md) for the
+License (see [`demos/simple-demos/assets/sources.md`](../demos/simple-demos/assets/sources.md) for the
 original filenames and license notes).
 
 Two design points worth understanding:
@@ -95,17 +97,18 @@ Two design points worth understanding:
    [Chapter 6 §6.6](06-agent-integration.md#66-echo-cancellation-scope) for
    the measured per-browser table.
 
-## 3.4a The simplified voice demo (`demo/demo-simplified-voice-iife-bundle.html`)
+## 3.4a The simplified voice demo (`demos/simple-demos/demo-simplified-voice-iife-bundle.html`)
 
 The minimal AEC-experiment page (used for the rev-8.1 measurements):
 
 - Loads the pinned CDN bundle by default; **`?local=1`** swaps in the repo
-  build (`../build/speak-or-no-speak.iife.js`) so `src/` changes are testable
+  build (`../../build/speak-or-no-speak.iife.js`) so `src/` changes are testable
   without a CDN push (note: the dev server's clean-URL redirect drops query
-  strings — use the extension-less URL `/demo/demo-simplified-voice-iife-bundle?local=1`).
+  strings — use the extension-less URL
+  `/demos/simple-demos/demo-simplified-voice-iife-bundle?local=1`).
 - **Voice source toggle** — `speechSynthesis` (cannot be routed; on Chromium
   it leaks without the `"all"` scope + OS permission) vs **audio buffer
-  (routed)** — plays `demo/agent-voice-sample.wav` through
+  (routed)** — plays `demos/simple-demos/agent-voice-sample.wav` through
   `createAgentAudioRoute()` (the route is created in the mic-start click,
   gesture-scoped).
 - **AEC status line** — `(engine: … · aec scope: …)` after start, plus the
@@ -130,7 +133,7 @@ Once the microphone runs, the STT row appears:
 
 - **"transcribe turns"** checkbox — enables transcription of every completed
   turn.
-- **Endpoint field** — default `http://localhost:5175/transcribe`, i.e. the
+- **Endpoint field** — default `http://localhost:6000/transcribe`, i.e. the
   stub server from [§2.3](02-getting-started.md#23-optional-the-python-stt-stub-server).
   Any endpoint accepting a WAV POST and answering
   `{ "text": "…", "confidence": 0..1 }` works.
@@ -147,10 +150,10 @@ timestamp. It keeps the last 20 lines.
 
 ## 3.7 The Python script: what it does and what it does NOT do
 
-[`demo/stt-stub-server.py`](../demo/stt-stub-server.py) is a **dev-only STT
+[`demos/simple-demos/stt-stub-server.py`](../demos/simple-demos/stt-stub-server.py) is a **dev-only STT
 stub endpoint** ("WP9 verification"). Its entire behavior:
 
-- Listens on `http://localhost:5175/transcribe` (port configurable as the first
+- Listens on `http://localhost:6000/transcribe` (port configurable as the first
   CLI argument).
 - **`POST /transcribe`**: reads the request body, checks whether it starts with
   the `RIFF` magic (i.e. is a WAV), and answers **200** with a canned JSON
@@ -181,7 +184,7 @@ What it is **NOT**:
 
 (The demo also cache-busts its module with `main.js?v=3` — a version query
 bumping the stale module cache while the dev server sends no `Cache-Control`
-header. Bump it when `demo/main.js` changes.)
+header. Bump it when `demos/simple-demos/main.js` changes.)
 
 ## 3.9 Suggested experiments
 
@@ -201,14 +204,14 @@ header. Bump it when `demo/main.js` changes.)
 **Bundle variants of this demo:** the exact same UI and wiring also ships as
 two single-file pages that load **only the prebuilt bundle** instead of
 [`src/`](../src/index.js) —
-[`demo/demo-esm-bundle.html`](../demo/demo-esm-bundle.html) (ESM import,
+[`demos/simple-demos/demo-esm-bundle.html`](../demos/simple-demos/demo-esm-bundle.html) (ESM import,
 [§4.3](04-embedding.md#43-mode-2--prebuilt-esm-bundle)) and
-[`demo/demo-iife-bundle.html`](../demo/demo-iife-bundle.html) (classic script +
+[`demos/simple-demos/demo-iife-bundle.html`](../demos/simple-demos/demo-iife-bundle.html) (classic script +
 `window.SpeakOrNoSpeak` global,
 [§4.4](04-embedding.md#44-mode-3--prebuilt-iife-bundle-classic-script-no-modules)).
 Serve the checkout (`npm start`) and open
-`http://localhost:5173/demo/demo-esm-bundle.html` or
-`http://localhost:5173/demo/demo-iife-bundle.html` — everything in this chapter
+`http://localhost:5173/demos/simple-demos/demo-esm-bundle.html` or
+`http://localhost:5173/demos/simple-demos/demo-iife-bundle.html` — everything in this chapter
 (page anatomy, the `?noaec=1` parameter, suggested experiments) applies to both
 unchanged.
 

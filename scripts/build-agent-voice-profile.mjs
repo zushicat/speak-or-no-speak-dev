@@ -13,7 +13,7 @@
  *
  * Options:
  *   --wav <path>     agent voice audio, 16 kHz mono 16-bit PCM
- *                    (default: demo/agent-voice-sample.wav)
+ *                    (default: demos/simple-demos/agent-voice-sample.wav)
  *   --model <path>   the ONNX speaker-embedding model
  *                    (default: vendor/wespeaker_en_voxceleb_resnet34.onnx)
  *   --out <path>     profile JSON (default: src/gate/agent-voice-profile.json)
@@ -33,7 +33,7 @@ const arg = (name, def) => {
   const i = args.indexOf(`--${name}`);
   return i >= 0 && args[i + 1] ? args[i + 1] : def;
 };
-const wavPath = arg("wav", "demo/agent-voice-sample.wav");
+const wavPath = arg("wav", "demos/simple-demos/agent-voice-sample.wav");
 const modelPath = arg("model", "vendor/wespeaker_en_voxceleb_resnet34.onnx");
 const outPath = arg("out", "src/gate/agent-voice-profile.json");
 const checkPath = arg("check", null);

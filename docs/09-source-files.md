@@ -9,7 +9,8 @@ repository layout first, then the files grouped by directory.
 ## 9.1 Repository layout and the zero-build philosophy
 
 ```
-demo/                 demo page (index.html, main.js, stt-stub-server.py, assets/)
+demos/                demos: simple-demos/ (the demo page: index.html, main.js,
+                      stt-stub-server.py, assets/) · hey-buddy/ (the Hey, Buddy! chat demo)
 src/                  the module (facade, VAD adapters, turn state machine)
   vad/                engine interface + Silero adapter + energy fallback
                       + aec-scope.js (AEC scope negotiation/classification, rev-8.1 WP-E1)
@@ -224,11 +225,11 @@ the encoder lives in `src/` and its tests in `test/util/`.
   fbank is useless). Shared by the browser gate and the offline profile
   builder.
 - **`agent-voice-profile.json`** — the committed 3.7 KB profile (built from
-  `demo/agent-voice-sample.wav` by
+  `demos/simple-demos/agent-voice-sample.wav` by
   `scripts/build-agent-voice-profile.mjs`; the MODEL is gitignored
   `/vendor/`).
 
-## 9.12 `demo/` — the demo files
+## 9.12 `demos/simple-demos/` — the simple demo files
 
 - **`index.html`** — the UI (Chapter 3) plus the two pinned CDN tags; the
   module script is cache-busted with a version query (`main.js?v=3`).

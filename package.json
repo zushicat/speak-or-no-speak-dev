@@ -9,7 +9,7 @@
   },
   "files": [
     "src/",
-    "demo/",
+    "demos/simple-demos/",
     "assets/",
     "test/harness.html",
     "test/harness-main.js",

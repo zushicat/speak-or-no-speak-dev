@@ -266,7 +266,7 @@
     <div id="sttRow" hidden class="row">
       <input type="checkbox" id="transcribe">
       <label style="font-size:13px">transcribe turns</label>
-      <input id="sttEndpoint" value="http://localhost:5175/transcribe" placeholder="STT endpoint URL (POST, WAV body)"
+      <input id="sttEndpoint" value="http://localhost:6000/transcribe" placeholder="STT endpoint URL (POST, WAV body)"
         size="30">
     </div>
     <div id="log"></div>
@@ -275,17 +275,19 @@
   <!--
     demo-esm-bundle.html — docs/04-embedding.md §4.3 "Mode 2 — prebuilt ESM bundle"
 
-    UI and wiring are IDENTICAL to demo/index.html + demo/main.js — same
+    UI and wiring are IDENTICAL to demos/simple-demos/index.html +
+    demos/simple-demos/main.js — same
     elements, same behavior. The ONLY difference is where the library code
-    comes from: the prebuilt minified bundle ../build/speak-or-no-speak.esm.js
+    comes from: the prebuilt minified bundle
+    ../../build/speak-or-no-speak.esm.js
     (all 16 named exports of src/index.js preserved) instead of src/.
 
     Run it (secure context required — file:// will not work):
         npm start        # python3 -m http.server 5173, serves the checkout root
-        open http://localhost:5173/demo/demo-esm-bundle.html
+        open http://localhost:5173/demos/simple-demos/demo-esm-bundle.html
 
-    The specifier "../build/speak-or-no-speak.esm.js" is relative because this
-    page is served from the checkout (demo/ → ../build/). Copied next to your
+    The specifier "../../build/speak-or-no-speak.esm.js" is relative because this
+    page is served from the checkout (demos/simple-demos/ → ../../build/). Copied next to your
     page it is "./speak-or-no-speak.esm.js" (docs §4.3). Once the GitHub repo
     (github.com/zushicat/speak-or-no-speak-dev) is public, an absolute URL works
     as well — GitHub Pages or jsDelivr's GitHub mirror:
@@ -299,18 +301,19 @@
   <!-- The entire consumer code — imports ONLY the prebuilt bundle, never src/. -->
   <script type="module">
     // docs §4.3: one import from the minified ESM bundle — this is the whole
-    // integration. (demo/main.js imports the same names from ../src/index.js;
-    // here they all come from the bundle, CloudStubAdapter included.)
+    // integration. (demos/simple-demos/main.js imports the same names from
+    // ../../src/index.js; here they all come from the bundle,
+    // CloudStubAdapter included.)
     import {
       createSpeakOrNoSpeak,
       humanMessage,
       SmartTurnModel,
       CloudStubAdapter,
       createAgentAudioRoute,
-    } from "../build/speak-or-no-speak.esm.js";
+    } from "../../build/speak-or-no-speak.esm.js";
 
     document.getElementById("meta").textContent =
-      "mode 2 · ESM · ../build/speak-or-no-speak.esm.js";
+      "mode 2 · ESM · ../../build/speak-or-no-speak.esm.js";
 
     const button = document.getElementById("start");
     const label = document.getElementById("label");

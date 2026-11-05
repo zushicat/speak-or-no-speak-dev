@@ -65,7 +65,7 @@ instead of failing the page.
 | the mic hears the agent's TTS | check `degraded.aecScope`: `"unknown"` on Chromium → route the agent audio (the demo's "audio buffer (routed)" source shows the fix); `"none"` → AEC is off (stricter gating active); `"all"` → should not happen (measured clean) — file a report |
 | false interrupts from loud speakers | without AEC the browser can only gate barge-in statistically — route the agent audio, lower speaker volume, use headphones ([§6.6](06-agent-integration.md#66-echo-cancellation-scope)), or set `halfDuplex: true` when barge-in is unwanted |
 | Safari hangs at start | the adapter auto-retries with the ScriptProcessor path (check `sons._engine.processorTypeUsed`); the mic needs a user gesture — call `start()` from a click ([§10.4](10-vad-engines.md#104-the-audioworklet-hang-and-the-scriptprocessor-fallback)) |
-| stale demo behavior after editing `demo/main.js` | bump the `?v=` cache-bust query in `demo/index.html` (dev server sends no `Cache-Control` header) |
+| stale demo behavior after editing `demos/simple-demos/main.js` | bump the `?v=` cache-bust query in `demos/simple-demos/index.html` (dev server sends no `Cache-Control` header) |
 | turns split on hesitant speech | enable Smart Turn ([Chapter 12](12-smart-turn.md)) or widen `redemptionMs` ([§14.4](14-configuration-tuning.md#144-tuning-recipes)) |
 | coughs/clicks trigger turns | raise `onsetConfirmFrames`; `minSpeechMs` is the second guard |
 

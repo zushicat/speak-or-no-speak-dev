@@ -113,7 +113,7 @@ The pinned paths are constants in
 The versions appear in three places that must stay in sync:
 
 1. the `<script>` tags in your page (and in
-   [`demo/index.html`](../demo/index.html)),
+   [`demos/simple-demos/index.html`](../demos/simple-demos/index.html)),
 2. the asset-path constants in
    [`src/vad/silero-vad-adapter.js`](../src/vad/silero-vad-adapter.js)
    (used for vad-web's model/worklet fetches and ORT's WASM fetches),

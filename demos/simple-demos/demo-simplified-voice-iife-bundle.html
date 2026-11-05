@@ -17,7 +17,7 @@
   <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.31/dist/bundle.min.js"></script>
   <!-- The SpeakOrNoSpeak IIFE bundle is injected by the loader at the end of
-       <body>: the pinned CDN build by default, the repo build (`../build/`,
+       <body>: the pinned CDN build by default, the repo build (`../../build/`,
        same origin) with ?local=1 — so local src/ changes are testable from a
        local rebuild without a CDN push (WP-E0 0.5). -->
 </head>
@@ -65,7 +65,7 @@
     // new build, purge via https://www.jsdelivr.com/tools/purge or wait it out.
     const BUNDLE_URL_CDN =
       "https://cdn.jsdelivr.net/gh/zushicat/speak-or-no-speak-dev/build/speak-or-no-speak.iife.js";
-    const BUNDLE_URL_LOCAL = "../build/speak-or-no-speak.iife.js";
+    const BUNDLE_URL_LOCAL = "../../build/speak-or-no-speak.iife.js";
     const bundleSrc = new URLSearchParams(location.search).has("local")
       ? BUNDLE_URL_LOCAL
       : BUNDLE_URL_CDN;

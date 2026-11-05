@@ -222,7 +222,7 @@
   <!-- The prebuilt IIFE bundle: a classic <script>, no modules — it defines
        the global window.SpeakOrNoSpeak (docs §4.4). Blocking scripts in <head>
        guarantee it is loaded before the inline script in <body> runs. -->
-  <script src="../build/speak-or-no-speak.iife.js"></script>
+  <script src="../../build/speak-or-no-speak.iife.js"></script>
 </head>
 
 <body>
@@ -270,7 +270,7 @@
     <div id="sttRow" hidden class="row">
       <input type="checkbox" id="transcribe">
       <label style="font-size:13px">transcribe turns</label>
-      <input id="sttEndpoint" value="http://localhost:5175/transcribe" placeholder="STT endpoint URL (POST, WAV body)"
+      <input id="sttEndpoint" value="http://localhost:6000/transcribe" placeholder="STT endpoint URL (POST, WAV body)"
         size="30">
     </div>
     <div id="log"></div>
@@ -280,18 +280,20 @@
     demo-iife-bundle.html — docs/04-embedding.md §4.4 "Mode 3 — prebuilt IIFE
     bundle (classic script, no modules)"
 
-    UI and wiring are IDENTICAL to demo/index.html + demo/main.js — same
+    UI and wiring are IDENTICAL to demos/simple-demos/index.html +
+    demos/simple-demos/main.js — same
     elements, same behavior. The ONLY difference is where the library code
-    comes from: the prebuilt minified bundle ../build/speak-or-no-speak.iife.js,
+    comes from: the prebuilt minified bundle
+    ../../build/speak-or-no-speak.iife.js,
     loaded as a classic <script> that defines window.SpeakOrNoSpeak — no
     type="module", no import statements.
 
     Run it (secure context required — file:// will not work):
         npm start        # python3 -m http.server 5173, serves the checkout root
-        open http://localhost:5173/demo/demo-iife-bundle.html
+        open http://localhost:5173/demos/simple-demos/demo-iife-bundle.html
 
-    The src "../build/speak-or-no-speak.iife.js" is relative because this page
-    is served from the checkout (demo/ → ../build/). Copied next to your page
+    The src "../../build/speak-or-no-speak.iife.js" is relative because this page
+    is served from the checkout (demos/simple-demos/ → ../../build/). Copied next to your page
     it is "./speak-or-no-speak.iife.js" (docs §4.4). Once the GitHub repo
     (github.com/zushicat/speak-or-no-speak-dev) is public, an absolute URL works
     as well — GitHub Pages or jsDelivr's GitHub mirror:
@@ -311,17 +313,18 @@
       document.getElementById("label").textContent = "bundle failed to load";
       document.getElementById("err").textContent =
         "window.SpeakOrNoSpeak is missing — the IIFE bundle did not load. Serve " +
-        "the checkout root (npm start → http://localhost:5173/demo/demo-iife-bundle.html) " +
+        "the checkout root (npm start → http://localhost:5173/demos/simple-demos/demo-iife-bundle.html) " +
         "and make sure build/speak-or-no-speak.iife.js exists (npm run build:bundle).";
     } else {
       // Same 16 named exports as the ESM bundle / src/index.js — just reached
-      // through the global instead of an import. (demo/main.js imports the
-      // same names from ../src/index.js; here they all come from the bundle,
+      // through the global instead of an import.
+      // (demos/simple-demos/main.js imports the
+      // same names from ../../src/index.js; here they all come from the bundle,
       // SmartTurnModel and CloudStubAdapter included.)
       const { createSpeakOrNoSpeak, humanMessage, SmartTurnModel, CloudStubAdapter, createAgentAudioRoute } = bundle;
 
       document.getElementById("meta").textContent =
-        "mode 3 · IIFE · ../build/speak-or-no-speak.iife.js → window.SpeakOrNoSpeak";
+        "mode 3 · IIFE · ../../build/speak-or-no-speak.iife.js → window.SpeakOrNoSpeak";
 
       const button = document.getElementById("start");
       const label = document.getElementById("label");

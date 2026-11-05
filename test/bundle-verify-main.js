@@ -4,7 +4,7 @@
  * exercises exactly what a consumer of `build/speak-or-no-speak.*.js` gets:
  * the pinned CDN tags for the runtime deps (D2) + the bundle's 16 exports.
  *
- * Wiring only (like demo/main.js): UI mapping + event log, NO detection logic.
+ * Wiring only (like demos/simple-demos/main.js): UI mapping + event log, NO detection logic.
  *
  * Query params:
  *   (default)    ESM mode: `import("../build/speak-or-no-speak.esm.js")`
@@ -185,7 +185,7 @@ function initVerifyPage() {
         },
         onError: (err) => logLine(`onError ${err.code}: ${err.message}`, true),
       });
-      window.__sons = sons; // debug handle (tooling — same pattern as demo/main.js)
+      window.__sons = sons; // debug handle (tooling — same pattern as demos/simple-demos/main.js)
       await sons.start();
 
       const processor = sons._engine?.processorTypeUsed ? ` · processor=${sons._engine.processorTypeUsed}` : "";
