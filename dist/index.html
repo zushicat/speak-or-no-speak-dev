@@ -290,10 +290,6 @@
     <div style="border-top: 1px solid #666; padding-top: 10px;">Add noise</div>
     <div id="voiceRow">
       <button id="voice" aria-pressed="false">Start computer voice</button>
-      <select id="voiceSrc" aria-label="Voice source">
-        <option value="synth" selected>speechSynthesis</option>
-        <option value="routed">audio buffer (routed)</option>
-      </select>
       <select id="ttsVoice" aria-label="Speech synthesis voice">
         <option value="" selected>system default</option>
       </select>
@@ -345,8 +341,8 @@
     } else {
       const { createSpeakOrNoSpeak, humanMessage, SmartTurnModel, CloudStubAdapter, encodeWav, createAgentAudioRoute } = bundle;
 
-      document.getElementById("meta").textContent =
-        "mode 3 · IIFE · jsDelivr build → window.SpeakOrNoSpeak";
+      // document.getElementById("meta").textContent =
+      //   "mode 3 · IIFE · jsDelivr build → window.SpeakOrNoSpeak";
 
       const button = document.getElementById("start");
       const label = document.getElementById("label");
@@ -376,7 +372,7 @@
       let smartTurnModel = null;
 
       const synth = window.speechSynthesis;
-      const utterance = new SpeechSynthesisUtterance("Hello. I am happy that you talk to me. Tell me about your day. What have you been up to?");
+      const utterance = new SpeechSynthesisUtterance("The New York Times is a newspaper based in Manhattan, New York City. The New York Times covers domestic, national, and international news, and publishes opinion pieces and reviews. One of the longest-running newspapers in the United States, the Times serves as one of the country's newspapers of record.")
 
       let voiceRunning = false;
       let route = null;        // created at mic start (user gesture), stopped at mic stop
@@ -785,17 +781,19 @@
         }
         setVoiceUi(true);
 
-        if (voiceSrc.value === "routed") {
-          try {
-            await playRoutedVoice();
-          } catch (err) {
-            setVoiceUi(false);
-            errEl.textContent = `Routed voice failed: ${err?.message ?? err}`;
-          }
-        } else {
-          applySelectedVoice(utterance);
-          synth.speak(utterance);
-        }
+        // if (voiceSrc.value === "routed") {
+        //   try {
+        //     await playRoutedVoice();
+        //   } catch (err) {
+        //     setVoiceUi(false);
+        //     errEl.textContent = `Routed voice failed: ${err?.message ?? err}`;
+        //   }
+        // } else {
+        //   applySelectedVoice(utterance);
+        //   synth.speak(utterance);
+        // }
+        applySelectedVoice(utterance);
+        synth.speak(utterance);
       }
 
       /** Apply the TTS voice picked in the voice dropdown (unset = system
