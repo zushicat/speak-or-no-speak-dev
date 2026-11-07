@@ -32,13 +32,6 @@ npm start
 
 Open [http://localhost:5173/demos/simple-demos/](http://localhost:5173/demos/simple-demos/) and click **Start microphone**. You can also run `npm run start:serve`. The demo has optional background sounds to exercise detection under noise. Microphone access requires localhost or HTTPS, and the default Silero path loads pinned browser libraries and model assets from jsDelivr.
 
-The **Hey, Buddy! chat demo** — a standalone static app at
-[`demos/hey-buddy/`](demos/hey-buddy/) — runs from the same server: open
-[http://localhost:5173/demos/hey-buddy/](http://localhost:5173/demos/hey-buddy/).
-It is a full conversation (turn → STT → LLM → speech) and needs the local
-parakeet STT server on `:18001` and LM Studio (`--cors`) on `:1234`; see its
-[README](demos/hey-buddy/README.md).
-
 ## Use it in a page
 
 The source version needs the two browser runtime scripts shown below. Call `start()` from a click or another user gesture. See [Getting started](docs/02-getting-started.md) for bundles and npm use.
