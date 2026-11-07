@@ -215,6 +215,18 @@ Serve the checkout (`npm start`) and open
 (page anatomy, the `?noaec=1` parameter, suggested experiments) applies to both
 unchanged.
 
+## 3.10 The hey-buddy demo (`demos/hey-buddy/`)
+
+A standalone **conversational** demo — turn detection → STT → LLM stream →
+sentence splitter → `speechSynthesis` — living at
+[`demos/hey-buddy/`](../demos/hey-buddy/). Unlike the simple demos it is a plain
+static app with no build step: serve the checkout (`npm start`) and open
+`http://localhost:5173/demos/hey-buddy/`. It loads the module from the jsDelivr
+build and needs the local parakeet STT (`:18001`) and LM Studio (`:1234`,
+`--cors`) servers. Echo profiles, the `degraded.aecScope` status line, Smart
+Turn and the tuning URL parameters are documented in its
+[README](../demos/hey-buddy/README.md).
+
 ---
 
 *Prev: [Chapter 2 — Getting started](02-getting-started.md) · Next: [Chapter 4 — Embedding](04-embedding.md)*

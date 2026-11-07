@@ -8,3 +8,5 @@ package-lock.json
 plans
 docs/deprecated
 docs_new
+
+.pnpm-store

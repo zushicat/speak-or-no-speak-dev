@@ -240,6 +240,23 @@ the encoder lives in `src/` and its tests in `test/util/`.
 - **`assets/`** — the five Pixabay ambient MP3s + `sources.md` (original
   filenames, lengths, license notes).
 
+## 9.13 `demos/hey-buddy/` — the Hey, Buddy! chat demo (static)
+
+- **`index.html`** — the page: the two pinned runtime-lib CDN tags (`ort`,
+  `vad-web`), the module loaded from the jsDelivr build, `styles.css`, and the
+  app bundle (`app.js?v=1`).
+- **`app.js`** — the whole app as one unminified esbuild bundle, type-stripped
+  from the hey-buddy upstream TypeScript (rev-10.1; provenance and the
+  pre-migration snapshot are documented in its README). Editable directly —
+  bump the `?v=` query in `index.html` when changed.
+- **`styles.css`** — the demo stylesheet.
+- **`favicon.svg`** · **`vendor/`** — page icon; Smart Turn weights
+  (`smart-turn-v3.2-cpu.onnx`, gitignored, manual download).
+
+The chat pipeline and the echo/scope semantics are described in
+[Chapter 3 §3.10](03-demo.md#310-the-hey-buddy-demo-demoshey-buddy) and the
+[demo README](../demos/hey-buddy/README.md).
+
 ---
 
 *Prev: [Chapter 8 — Architecture](08-architecture.md) · Next: [Chapter 10 — VAD engines](10-vad-engines.md)*
