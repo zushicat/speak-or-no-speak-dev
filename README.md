@@ -2,96 +2,109 @@
 
 ### Know when a person starts talking, finishes a thought, or interrupts your voice agent.
 
-Speak Or No Speak is a browser JavaScript layer for **conversational turn taking**. It takes microphone frames from Silero VAD and turns them into three useful events: speech started, user turn ended, and user interrupted the agent. It keeps the audio for each completed turn so your app can send it to transcription.
+**Speak Or No Speak** is a browser JavaScript module for **conversational
+turn taking**. It listens to the microphone and tells your voice application
+the three moments it needs to know about — the user **started speaking**, the
+user **finished a turn** (with that utterance's audio attached, ready for
+transcription), and the user **barged in while the agent was answering**.
+It runs entirely in the browser, on the user's device: no backend, no keys,
+no audio uploaded for detection.
 
-<p align="center"><img src="docs/assets/turn-flow.svg" alt="Microphone audio flows through speech detection, turn decisions, and optional semantic checking to voice-agent events" width="900"></p>
+<p align="center"><img src="docs/assets/turn-flow-light.svg" alt="Microphone audio flows through speech detection, turn decisions, and optional semantic checking to voice-agent events" width="900"></p>
 
-<p align="center"><a href="https://zushicat.github.io/speak-or-no-speak-dev/">Try the live demo</a> · <a href="docs/README.md">Read the guide</a> · <a href="demos/simple-demos/">Explore the demo code</a></p>
+<p align="center">
+  <a href="https://zushicat.github.io/speak-or-no-speak-dev/">Try the live demo</a> ·
+  <a href="docs/README.md">Read the guide</a> ·
+  <a href="demos/">Explore the demo code</a>
+</p>
 
-## Why use it?
+## The problem, in plain English
 
-A voice activity detector can tell you whether a frame sounds like speech. A talking agent needs more: a brief pause may be part of the same thought, and speech during the agent's answer may be an interruption. Wiring basic speech-start and speech-end callbacks to an agent leaves those decisions to your application.
+When two people talk, taking turns is automatic. For a computer it is not.
+Somewhere in every voice app a component must answer three questions hundreds
+of times per second — and each one looks trivial and is not:
 
-| What your app needs | What this project does |
-| --- | --- |
-| Decide when to answer | Uses a silence window that adapts to the current turn's speaking rhythm; interior pauses can remain one turn. |
-| Let the user interrupt | Has a dedicated agent-speaking mode and emits `onInterrupt` after confirmed speech. |
-| Keep the whole utterance | Buffers audio before speech onset and accumulates 16 kHz mono PCM through the end of the turn. |
-| Handle echo and engine failure | Requests the widest browser echo-cancellation scope, reports what the browser actually cancels (`degraded.aecScope`), ships a route that makes your agent's own audio cancelable on every browser, applies stricter interruption gating without AEC, and reports when it falls back from Silero to energy detection. |
-| Add language awareness when needed | Can ask an optional turn model whether an acoustically finished utterance sounds complete. |
+1. **Is the user speaking right now?** A cough or a keyboard click must not
+   count as speech; a real onset must be reported within about a third of a
+   second.
+2. **Has the user finished their thought?** A pause inside a sentence
+   ("let me think… okay, so") must *not* end the turn — but a real end must be
+   picked up quickly. A fixed wait time is either too slow or too
+   trigger-happy.
+3. **Is the user talking over the answer?** While the agent speaks, the mic
+   must keep listening and report the barge-in within a fraction of a second —
+   without mistaking the agent's own voice for the user.
 
-**Compared with using [`@ricky0123/vad-web`](https://github.com/ricky0123/vad) alone:** this project uses the same Silero speech classifier and adds turn timing, pause handling, interruption mode, and accumulated turn audio. It does not claim a more accurate underlying speech classifier. It also does not transcribe speech or generate replies; you connect your own STT, agent, and audio output.
+A plain speech detector (a VAD) only answers question 1. Speak Or No Speak
+uses the open [Silero VAD](https://github.com/snakers4/silero-vad) under the
+hood and adds the layer that actually matters for conversation: **adaptive
+turn-taking, interruption detection, and echo safety.**
 
-**Echo-cancellation honesty (measured, per browser):** a browser cancels exactly the audio it can *reference*. Chromium without the `"all"` scope cancels only WebRTC-remote audio — your `speechSynthesis` TTS leaks into the mic; the module reports this (`degraded.aecScope`) and ships `createAgentAudioRoute()` to fix it. Other apps' audio is only cancelled by OS-level AEC ([Chapter 6 §6.6](docs/06-agent-integration.md#66-echo-cancellation-scope), [§6.10](docs/06-agent-integration.md#610-os-level-echo-cancellation)).
+**What it is not:** no transcription inside (it hands you the audio and a
+plug point connects your STT), no chatbot brain, no text-to-speech, no wake
+words, no mobile support yet. Your app stays in charge of understanding and
+answering — this module is its "ears".
 
-## Try it locally
+| Your app gets | Event |
+|---|---|
+| "The user started speaking" | `onSpeechStart` |
+| "The utterance is complete — here is the audio" | `onTurnEnd` (16 kHz mono `Float32Array`, incl. a 200 ms pre-speech pad) |
+| "The user barged in while the agent was talking" | `onInterrupt` |
+
+## Try it
+
+The [live demo](https://zushicat.github.io/speak-or-no-speak-dev/) runs the
+full page — microphone detection, background noise, computer voice, optional
+transcription — straight from GitHub Pages:
+
+<p align="center"><a href="https://zushicat.github.io/speak-or-no-speak-dev/"><img src="docs/assets/demo.png" alt="The demo page: orange listening dot, start button, noise and transcription controls" width="700"></a></p>
+
+Or run it from a checkout:
 
 ```bash
 npm start
 ```
 
-Open [http://localhost:5173/demos/simple-demos/](http://localhost:5173/demos/simple-demos/) and click **Start microphone**. You can also run `npm run start:serve`. The demo has optional background sounds to exercise detection under noise. Microphone access requires localhost or HTTPS, and the default Silero path loads pinned browser libraries and model assets from jsDelivr.
+Then open <http://localhost:5173/demos/> and click **Start microphone**.
+(Microphone access requires `http://localhost` or HTTPS, and the first load
+fetches two pinned runtime libraries from the CDN.) The
+[quick start](docs/02-quick-start.md) walks through everything you will see.
 
-The **Hey, Buddy! chat demo** — a standalone static app at
-[`demos/hey-buddy/`](demos/hey-buddy/) — runs from the same server: open
-[http://localhost:5173/demos/hey-buddy/](http://localhost:5173/demos/hey-buddy/).
-It is a full conversation (turn → STT → LLM → speech) and needs the local
-parakeet STT server on `:18001` and LM Studio (`--cors`) on `:1234`; see its
-[README](demos/hey-buddy/README.md).
+## Architecture
 
-## Use it in a page
+Mic → Silero VAD frames (32 ms) → a pure turn state machine (onset
+confirmation, adaptive end-of-turn window, barge-in confirmation) → your
+events. A degraded energy-based fallback engine keeps detection alive if the
+neural engine cannot load, and every degradation is flagged, never silent.
 
-The source version needs the two browser runtime scripts shown below. Call `start()` from a click or another user gesture. See [Getting started](docs/02-getting-started.md) for bundles and npm use.
+![Architecture](docs/assets/architecture.png)
 
-```html
-<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.31/dist/bundle.min.js"></script>
-<button id="start">Start listening</button>
-<script type="module">
-  import { createSpeakOrNoSpeak } from "./src/index.js";
-
-  function stopAgentAudio() { /* stop your app's TTS playback here */ }
-
-  const listener = await createSpeakOrNoSpeak({
-    onSpeechStart: () => console.log("The user is speaking"),
-    onTurnEnd: ({ audio, afterInterrupt }) => {
-      // audio is 16 kHz mono Float32Array, ready for your STT pipeline.
-      console.log("Turn complete", audio.length, { afterInterrupt });
-    },
-    onInterrupt: () => {
-      stopAgentAudio();                 // your synchronous playback stop
-      listener.setAgentSpeaking(false); // disarm after output stops
-    },
-    onError: ({ code, message }) => console.warn(code, message),
-  });
-
-  document.querySelector("#start").addEventListener("click", () => listener.start());
-
-  // When your agent begins audio output: listener.setAgentSpeaking(true)
-  // When its audio output ends: listener.setAgentSpeaking(false)
-</script>
-```
-
-The `onInterrupt` callback signals an interruption; the user's audio arrives later in `onTurnEnd` with `afterInterrupt: true`. Always clear the agent-speaking flag when playback has actually stopped. [Agent integration](docs/06-agent-integration.md) shows a complete lifecycle.
+The components and data flow can be explored interactively in the
+[architecture app](docs/archify/speak-or-no-speak.architecture.html) — open it
+directly in a browser, no server needed.
 
 ## Documentation
 
-1. [Start and choose an embedding mode](docs/01-getting-started.md)
-2. [Understand the turn decisions](docs/02-how-it-works.md)
-3. [Connect a talking agent and transcription](docs/03-agent-integration.md)
-4. [Use the API and tune defaults](docs/04-api-and-configuration.md)
-5. [Understand the architecture and optional model](docs/05-architecture-and-extensions.md)
-6. [Diagnose failures and limitations](docs/06-troubleshooting.md)
+| You want to … | Read |
+|---|---|
+| Understand what this is, in plain words | [1 What is Speak Or No Speak?](docs/01-plain-english.md) |
+| See it running right now | [2 Quick start](docs/02-quick-start.md) → [3 The demo page](docs/03-demo-page.md) |
+| Put the module into your own app | [4 Use it in your own app](docs/04-use-in-your-app.md) → [5 API reference](docs/05-api-reference.md) |
+| Build a talking agent (TTS + barge-in) | [6 Agent integration](docs/06-agent-integration.md) |
+| Understand how detection works under the hood | [7 How detection works](docs/07-how-detection-works.md) → [8 Architecture](docs/08-architecture.md) → [9 Engines and runtime libraries](docs/09-engines-and-libraries.md) |
+| Use the optional extras | [10 Smart Turn](docs/10-smart-turn.md) · [11 Transcription](docs/11-transcription.md) |
+| Tune thresholds or debug behavior | [12 Configuration & tuning](docs/12-tuning.md) → [13 Troubleshooting](docs/13-troubleshooting.md) |
+| Work on the source code | [14 Development: build, test & publish](docs/14-development.md) |
+| Learn why it was designed this way | [15 Design background](docs/15-design-background.md) |
+| Look up a term | [Glossary](docs/appendix-glossary.md) |
 
-## Misc
-- Read the [documentation](docs/README.md)
-    - [Read here](docs/03-demo.md) how to start the [simple demos](demos/simple-demos)
-- [Inspect the architecture](docs/archify/speak-or-no-speak.architecture.html)
+## The essentials at a glance
 
-### Demo
-Check out the running demo: [https://zushicat.github.io/speak-or-no-speak-dev/](https://zushicat.github.io/speak-or-no-speak-dev/)
-![Demo Screenshot](./docs/assets/demo.png)
-
-#
-### Architecture
-![Architecture Screenshot](./docs/assets/architecture.png)
+- **Integration:** zero-build ES modules, a prebuilt ESM or IIFE single-file
+  bundle, or npm — [Use it in your own app](docs/04-use-in-your-app.md)
+- **On-device & private:** all detection is local; audio leaves the machine
+  only if *your* transcription does — [Transcription](docs/11-transcription.md)
+- **Honest degradation:** energy-engine fallback, echo-cancellation scope
+  reporting, fail-open turn model — [Troubleshooting](docs/13-troubleshooting.md)
+- **Browsers:** desktop Chrome / Edge / Safari; mobile is out of scope for now
+- **License:** MIT

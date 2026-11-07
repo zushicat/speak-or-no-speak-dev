@@ -1,11 +1,11 @@
-# Chapter 13 — Transcription plug point (STT)
+# Transcription plug point (STT)
 
-> Part of the [Speak Or No Speak documentation](README.md) · prev: [Chapter 12](12-smart-turn.md) · next: [Chapter 14 — Configuration & tuning](14-configuration-tuning.md)
+> Part of the [Speak Or No Speak documentation](README.md) · prev: [Smart Turn](10-smart-turn.md) · next: [Configuration & tuning](12-tuning.md)
 
 Speak Or No Speak ships **no** STT engine. It ships a **plug point** — and one
 hard rule about where transcription belongs.
 
-## 13.1 The hard rule: STT outside the real-time loop
+## The hard rule: STT outside the real-time loop
 
 **STT lives strictly outside the real-time loop.** Concretely:
 
@@ -19,11 +19,11 @@ hard rule about where transcription belongs.
 
 Why: STT is slow (hundreds of ms at best) and can fail in a dozen ways; the
 detection loop is 32 ms frames and must never wait on it. This separation is
-also what made the "lightweight" goal achievable — the method analysis
-explicitly rejected local streaming STT as the detection backbone
-([§17.2](17-background.md#172-the-candidate-solutions-ah-and-their-scores)).
+also what made the "lightweight" goal achievable — local streaming STT was
+explicitly rejected as the detection backbone
+([Design background](15-design-background.md#why-the-hybrid-architecture-won)).
 
-## 13.2 The `SttAdapter` interface
+## The `SttAdapter` interface
 
 [`src/stt/stt-adapter.js`](../src/stt/stt-adapter.js):
 
@@ -39,7 +39,7 @@ interface SttAdapter {
 `confidence` is optional (0..1) — include it if your backend provides one; the
 demo prints it as a percentage.
 
-## 13.3 `CloudStubAdapter` — the shipped example
+## `CloudStubAdapter` — the shipped example
 
 [`src/stt/cloud-stub-adapter.js`](../src/stt/cloud-stub-adapter.js) is a
 ~50-line **dev example** implementing the interface:
@@ -52,7 +52,7 @@ const stt = new CloudStubAdapter({
   token: "…",                                      // from YOUR config, never hardcoded
 });
 
-const sons = await createSpeakOrNoSpeak({
+const listener = await createSpeakOrNoSpeak({
   onTurnEnd: (e) => {
     stt.transcribe(e.audio, { language: "en-US" })
       .then((t) => console.log("💬", t.text))
@@ -70,13 +70,44 @@ Behavior:
 - Expects `{ "text": string, "confidence"?: number }` JSON back; non-2xx
   throws `STT endpoint responded <status>`.
 - The demo wires it against the local stub server
-  ([§3.7](03-demo.md#37-the-python-script-what-it-does-and-what-it-does-not-do)).
+  ([Demo page § the Python stub](03-demo-page.md#the-python-stub-server)).
 
 ⚠️ **Dev example — add auth for production.** Never hardcode API keys in app
 code; pass `endpoint` + `token` from your configuration, or keep credentials
 out of the browser entirely with a server-side proxy.
 
-## 13.4 The Web Speech API alternative
+## The OpenAI-compatible pattern
+
+Many STT servers (LM Studio, Groq, OpenAI, …) speak the
+`POST /v1/audio/transcriptions` dialect: a `multipart/form-data` body with a
+`file` field and a `model` field, answered with `{ text }`. The demo ships a
+small adapter for exactly that shape
+([`demos/main.js`](../demos/main.js)):
+
+```js
+class OpenAiCompatibleSttAdapter {
+  constructor({ endpoint, model, token }) { /* store config */ }
+  async transcribe(audio) {
+    const form = new FormData();
+    form.append("file", encodeWav(audio, 16000), "turn.wav");
+    if (this.model) form.append("model", this.model);
+    const headers = {};
+    if (this.token) headers.Authorization = `Bearer ${this.token}`;
+    // No manual Content-Type — the browser must add the multipart boundary.
+    const res = await fetch(this.endpoint, { method: "POST", headers, body: form });
+    if (!res.ok) throw new Error(`STT endpoint responded ${res.status}`);
+    const data = await res.json();
+    return { text: String(data.text ?? ""), confidence: data.confidence };
+  }
+}
+```
+
+In the demo, pick **OpenAI-compatible (multipart)** in the transcription row,
+point the endpoint at your server (e.g.
+`http://localhost:1234/v1/audio/transcriptions` for LM Studio), and set a
+model id if your server needs one.
+
+## The Web Speech API alternative
 
 A **zero-backend option**: the browser's built-in `SpeechRecognition` can run
 in parallel with listening, and your app harvests the final result whose
@@ -91,9 +122,10 @@ timing matches the turn window.
 Note the boundary: this is fine as an opportunistic **content** source, but it
 must not replace the module's detection — the method analysis rated the Web
 Speech API lowest as a detection backbone precisely because of the
-segmentation and echo behavior ([§17.2](17-background.md#172-the-candidate-solutions-ah-and-their-scores)).
+segmentation and echo behavior
+([Design background](15-design-background.md#the-candidate-solutions-ah-and-their-scores)).
 
-## 13.5 Writing your own adapter
+## Writing your own adapter
 
 Implement the interface for any backend — a Whisper server, a managed STT API,
 an edge model:
@@ -125,12 +157,14 @@ Checklist:
 - Keep latency off the real-time path: nothing in the module awaits your
   adapter, and nothing should.
 
-## 13.6 Privacy and security notes
+## Privacy and security notes
 
 - **The module sends nothing anywhere.** All detection is on-device; audio
   leaves the machine only if *your* adapter (or the Web Speech API) does that.
 - **Credentials**: never hardcode tokens in client code; prefer a server-side
-  proxy that keeps keys out of the browser.
+  proxy that keeps keys out of the browser. The demo stores its STT settings
+  (including the API key) in this browser's `localStorage` — a dev
+  convenience, not a pattern to copy.
 - **Tell users where audio goes** when you wire a cloud adapter — that is your
   app's privacy statement, not the module's.
 - The demo's stub server uses wide-open CORS and no auth: correct for a
@@ -138,4 +172,4 @@ Checklist:
 
 ---
 
-*Prev: [Chapter 12 — Smart Turn](12-smart-turn.md) · Next: [Chapter 14 — Configuration & tuning](14-configuration-tuning.md)*
+*Prev: [Smart Turn](10-smart-turn.md) · Next: [Configuration & tuning](12-tuning.md)*
