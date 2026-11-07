@@ -4,6 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
   <title>Speak Or No Speak — demo (prebuilt IIFE bundle · docs mode 3)</title>
   <style>
     body {
@@ -134,7 +135,8 @@
       cursor: pointer;
       background: #eee;
       line-height: 1.1;
-      max-width: 16rem; /* the TTS voice list has long entries — keep the row tidy */
+      max-width: 16rem;
+      /* the TTS voice list has long entries — keep the row tidy */
     }
 
     #voiceRow small {
@@ -179,6 +181,72 @@
       line-height: 1.1;
     }
 
+    #sttRow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      row-gap: 8px;
+      justify-content: center;
+      align-items: center;
+      margin-top: 40px;
+      border-top: 1px solid #333;
+      padding-top: 20px;
+    }
+
+    /* rev-11: model + API key sit on a second line under the endpoint. */
+    #sttCfgRow {
+      flex-basis: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Shared box look for the STT text controls (rev-11). */
+    #sttEndpoint,
+    #sttModel,
+    #sttApiKey {
+      appearance: none;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      height: 40px;
+      padding-left: 5px;
+      background-color: #eee;
+      font-size: 16px;
+      cursor: text;
+    }
+
+    #sttEndpoint {
+      width: 300px;
+      margin-left: 17px;
+    }
+
+    /* The mode select keeps its native dropdown arrow (no appearance: none). */
+    #sttMode {
+      height: 40px;
+      padding: 0 5px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      background-color: #eee;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    #sttModel {
+      width: 260px;
+    }
+
+    #sttApiKey {
+      width: 150px;
+    }
+
+    /* Model is irrelevant in stub mode — the script toggles disabled with the mode. */
+    #sttModel:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
     #log {
       margin-top: 14px;
       font-size: 13px;
@@ -186,7 +254,7 @@
       text-align: left;
       max-height: 10rem;
       overflow-y: auto;
-      color: #9ca3af;
+      color: #e5e9ef;
     }
 
     #log .err {
@@ -219,6 +287,7 @@
 
     <div id="err"></div>
     <div id="dbg"></div>
+    <div style="border-top: 1px solid #666; padding-top: 10px;">Add noise</div>
     <div id="voiceRow">
       <button id="voice" aria-pressed="false">Start computer voice</button>
       <select id="voiceSrc" aria-label="Voice source">
@@ -245,53 +314,36 @@
         <input id="bgVolume" type="range" min="0" max="100" step="1" value="50">
       </div>
     </div>
+    <div id="sttRow" hidden class="row">
+      <input type="checkbox" id="transcribe">
+      <label style="font-size:13px">transcribe turns</label>
+      <select id="sttMode" aria-label="STT backend mode">
+        <option value="openai" selected>OpenAI-compatible (multipart)</option>
+        <option value="stub">Stub (WAV body → JSON)</option>
+      </select>
+      <input id="sttEndpoint" value="http://localhost:6000/transcribe"
+        placeholder="STT endpoint URL — stub: POST WAV → JSON · openai: …/v1/audio/transcriptions" size="30">
+      <div id="sttCfgRow">
+        <input id="sttModel" type="text" aria-label="STT model id (OpenAI-compatible mode)"
+          placeholder="model id (e.g. mlx-community/parakeet-tdt-0.6b-v3)" size="26" disabled autocomplete="off">
+        <input id="sttApiKey" type="password" aria-label="STT API key (optional)" placeholder="API key (optional)"
+          size="14" autocomplete="off">
+      </div>
+    </div>
     <div id="log"></div>
   </div>
 
-  <!--
-    demo-iife-bundle.html — docs/04-embedding.md §4.4 "Mode 3 — prebuilt IIFE
-    bundle (classic script, no modules)"
-
-    UI and wiring are IDENTICAL to demos/simple-demos/index.html +
-    demos/simple-demos/main.js — same
-    elements, same behavior (except the demo's STT row, removed in this
-    copy — no transcription wiring). The ONLY difference is where the library
-    code comes from: the prebuilt minified bundle loaded from the jsDelivr
-    <script> tag above,
-    loaded as a classic <script> that defines window.SpeakOrNoSpeak — no
-    type="module", no import statements.
-
-    Run it (secure context required — file:// will not work):
-        npm start        # python3 -m http.server 5173, serves the checkout root
-        open http://localhost:5173/demos/simple-demos/demo-iife-bundle.html
-
-    The src "../../build/speak-or-no-speak.iife.js" is relative because this page
-    is served from the checkout (demos/simple-demos/ → ../../build/). Copied next to your page
-    it is "./speak-or-no-speak.iife.js" (docs §4.4). Once the GitHub repo
-    (github.com/zushicat/speak-or-no-speak-dev) is public, an absolute URL works
-    as well — GitHub Pages or jsDelivr's GitHub mirror:
-        https://cdn.jsdelivr.net/gh/zushicat/speak-or-no-speak-dev@<tag>/build/speak-or-no-speak.iife.js
-    (hosting options + MIME/CORS facts: plans/rev-5/explain-rev-5.md §5).
-
-    Sibling page: demo-esm-bundle.html (docs §4.3 — <script type="module">).
-    Query param: ?noaec=1 forces echoCancellation off (docs WP5 §5.4).
-  -->
-
-  <!-- The entire consumer code — no modules, the global is the whole API. -->
   <script>
     const bundle = window.SpeakOrNoSpeak;
 
     if (!bundle) {
-      // The bundle <script> failed (404 / wrong server root): render, never throw.
       document.getElementById("label").textContent = "bundle failed to load";
       document.getElementById("err").textContent =
         "window.SpeakOrNoSpeak is missing — the IIFE bundle did not load. Serve " +
         "the checkout root (npm start → http://localhost:5173/demos/simple-demos/demo-iife-bundle.html) " +
         "and make sure build/speak-or-no-speak.iife.js exists (npm run build:bundle).";
     } else {
-      // The named exports this demo still uses — just reached through the
-      // global instead of an import.
-      const { createSpeakOrNoSpeak, humanMessage, SmartTurnModel, createAgentAudioRoute } = bundle;
+      const { createSpeakOrNoSpeak, humanMessage, SmartTurnModel, CloudStubAdapter, encodeWav, createAgentAudioRoute } = bundle;
 
       document.getElementById("meta").textContent =
         "mode 3 · IIFE · jsDelivr build → window.SpeakOrNoSpeak";
@@ -301,6 +353,12 @@
       const errEl = document.getElementById("err");
       const dbg = document.getElementById("dbg");
       const smartTurn = document.getElementById("smartTurn");
+      const transcribeToggle = document.getElementById("transcribe");
+      const sttEndpoint = document.getElementById("sttEndpoint");
+      const sttMode = document.getElementById("sttMode");
+      const sttModel = document.getElementById("sttModel");
+      const sttApiKey = document.getElementById("sttApiKey");
+      const sttRow = document.getElementById("sttRow");
       const logEl = document.getElementById("log");
       const bgSound = document.getElementById("bgSound");
       const bgToggle = document.getElementById("bgToggle");
@@ -315,10 +373,8 @@
       let micRunning = false;
       let micBusy = false;
 
-      /** Cached across start/stop cycles — the ONNX session loads once. */
       let smartTurnModel = null;
 
-      // Computer voice (rev-9) — start/stop button + voice-source select.
       const synth = window.speechSynthesis;
       const utterance = new SpeechSynthesisUtterance("Hello. I am happy that you talk to me. Tell me about your day. What have you been up to?");
 
@@ -342,6 +398,134 @@
         line.textContent = `${new Date().toISOString().slice(11, 23)} ${text}`;
         logEl.prepend(line);
         while (logEl.children.length > 20) logEl.lastChild.remove();
+      }
+
+      // ---------------------------------------------------------------------
+      // rev-11: real STT backends — the mode select picks the request shape:
+      //   stub   → CloudStubAdapter: raw WAV body → { text, confidence? } JSON
+      //   openai → OpenAiCompatibleSttAdapter (below): multipart form-data with
+      //            `file` + `model`, for OpenAI-style /v1/audio/transcriptions
+      //            endpoints (LM Studio, Groq, OpenAI, …)
+      // ---------------------------------------------------------------------
+
+      /**
+       * Demo-local adapter (plan rev-11 D1/D3): POSTs the turn audio as
+       * multipart/form-data — `file` = 16 kHz mono WAV, `model` when set — with
+       * `Authorization: Bearer …` when a key is set; parses `{ text }` JSON back
+       * with a plain-text fallback. Same contract as the `SttAdapter` plug point.
+       */
+      class OpenAiCompatibleSttAdapter {
+        constructor(options = {}) {
+          if (!options.endpoint) throw new Error("OpenAiCompatibleSttAdapter requires an endpoint");
+          this.endpoint = options.endpoint;
+          this.model = options.model;
+          this.token = options.token;
+        }
+
+        async transcribe(audio) {
+          const form = new FormData();
+          form.append("file", encodeWav(audio, 16000), "turn.wav");
+          if (this.model) form.append("model", this.model);
+          const headers = {};
+          if (this.token) headers.Authorization = `Bearer ${this.token}`;
+          // No manual Content-Type — the browser must add the multipart boundary.
+          const res = await fetch(this.endpoint, { method: "POST", headers, body: form });
+          if (!res.ok) throw new Error(`STT endpoint responded ${res.status}`);
+          const type = res.headers.get("Content-Type") ?? "";
+          const data = type.includes("json") ? await res.json() : { text: (await res.text()).trim() };
+          return {
+            text: String(data.text ?? ""),
+            confidence: typeof data.confidence === "number" ? data.confidence : undefined,
+          };
+        }
+      }
+
+      /** Adapter factory from the current UI values (null = nothing configured). */
+      function buildSttAdapter() {
+        const endpoint = sttEndpoint.value.trim();
+        if (!endpoint) return null;
+        const token = sttApiKey.value.trim() || undefined;
+        if (sttMode.value === "openai") {
+          return new OpenAiCompatibleSttAdapter({
+            endpoint,
+            model: sttModel.value.trim() || undefined,
+            token,
+          });
+        }
+        return new CloudStubAdapter({ endpoint, token });
+      }
+
+      /** Network-level rejections ("Failed to fetch") mean an unreachable server or
+       *  missing CORS in practice — name the likely cause (plan rev-11 §5). */
+      function sttFailureMessage(mode, err) {
+        const base = `STT failed (${mode}): ${err.message}`;
+        return err instanceof TypeError
+          ? `${base} — unreachable, or CORS not enabled on the STT server?`
+          : base;
+      }
+
+      /** STT strictly outside the real-time loop — called from onTurnEnd only,
+       *  fire-and-forget with a catch; failures never touch detection events. */
+      function transcribeTurn(audio) {
+        if (!transcribeToggle.checked) return;
+        let adapter;
+        try {
+          adapter = buildSttAdapter();
+        } catch (err) {
+          logLine(`STT setup failed: ${err.message}`, true);
+          return;
+        }
+        if (!adapter) return;
+        const mode = sttMode.value; // captured: a mid-flight mode switch logs the serving mode
+        adapter.transcribe(audio)
+          .then((t) => logLine(`💬 "${t.text}"${t.confidence !== undefined ? ` (${(t.confidence * 100).toFixed(0)}%)` : ""} · ${mode}`))
+          .catch((err) => logLine(sttFailureMessage(mode, err), true));
+      }
+
+      // the model field only applies to the OpenAI-compatible backend.
+      function syncSttUi() {
+        sttModel.disabled = sttMode.value !== "openai";
+      }
+
+      // STT settings persistence — dev-demo convenience; the API key
+      // lives in this browser's localStorage (same caveat class as the adapter
+      // docstrings: never do this in production).
+      const STT_SETTINGS_KEY = "sons.stt";
+
+      function saveSttSettings() {
+        try {
+          localStorage.setItem(STT_SETTINGS_KEY, JSON.stringify({
+            mode: sttMode.value,
+            endpoint: sttEndpoint.value,
+            model: sttModel.value,
+            apiKey: sttApiKey.value,
+          }));
+        } catch { /* private mode / quota — persistence is best-effort */ }
+      }
+
+      let sttSaveTimer = 0;
+      function scheduleSttSave() {
+        clearTimeout(sttSaveTimer);
+        sttSaveTimer = setTimeout(saveSttSettings, 300);
+      }
+
+      function restoreSttSettings() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(STT_SETTINGS_KEY) ?? "null");
+          if (!saved) return;
+          if (saved.mode === "stub" || saved.mode === "openai") sttMode.value = saved.mode;
+          if (typeof saved.endpoint === "string") sttEndpoint.value = saved.endpoint;
+          if (typeof saved.model === "string") sttModel.value = saved.model;
+          if (typeof saved.apiKey === "string") sttApiKey.value = saved.apiKey;
+        } catch { /* corrupt JSON → keep markup defaults */ }
+      }
+
+      restoreSttSettings();
+      syncSttUi();
+      sttMode.addEventListener("change", syncSttUi);
+      for (const el of [sttMode, sttEndpoint, sttModel, sttApiKey]) {
+        el.addEventListener("input", scheduleSttSave);
+        el.addEventListener("change", scheduleSttSave);
       }
 
       // -------------------------------------------------------------------------
@@ -424,7 +608,7 @@
         errEl.textContent = "";
         label.textContent = "starting…";
 
-        // WP5 §5.4: `?noaec=1` forces echoCancellation off to exercise the
+        // `?noaec=1` forces echoCancellation off to exercise the
         // no-AEC fallback branch on any machine.
         const forceNoAec = new URLSearchParams(location.search).has("noaec");
         const mic = forceNoAec ? { echoCancellation: false } : undefined;
@@ -448,8 +632,9 @@
               // turn-finished log line (WP2 behavior spec)
               dbg.textContent = `turn: ${(e.durationMs / 1000).toFixed(1)} s` +
                 (e.truncated ? " (truncated)" : "") + (e.afterInterrupt ? " (after interrupt)" : "");
+              transcribeTurn(e.audio); // WP9 plug point — never affects detection
             },
-            // S3 (WP5): kept for completeness; the demo no longer drives TTS.
+            // kept for completeness; the demo no longer drives TTS.
             onInterrupt: (info) => {
               dbg.textContent = `interrupt after ${info.atMs} ms (latency ${info.latencyMs} ms)`;
               logLine(`barge-in after ${info.atMs} ms (latency ${info.latencyMs} ms)`);
@@ -465,6 +650,7 @@
           button.textContent = "Stop microphone";
           button.setAttribute("aria-pressed", "true");
           smartTurn.disabled = true;
+          sttRow.hidden = false;
           label.textContent = "not listening";
           if (forceNoAec || instance.degraded.aec) {
             errEl.textContent = humanMessage("no-aec");
@@ -473,11 +659,11 @@
             errEl.textContent = humanMessage("engine-fallback");
           }
 
-          // WP-E2: cancelable agent-audio route — created HERE inside the
-          // mic-start click (user gesture, R2), reused while the mic runs,
-          // stopped on mic stop. Fail-soft (R3): plain playback + stricter
+          // cancelable agent-audio route — created HERE inside the
+          // mic-start click, reused while the mic runs,
+          // stopped on mic stop. Fail-soft: plain playback + stricter
           // gating stay active if the loopback cannot be built. `?routemode=`
-          // forces loopback|direct (test hook, D7).
+          // forces loopback|direct (test hook).
           if (typeof createAgentAudioRoute === "function") {
             try {
               const forced = new URLSearchParams(location.search).get("routemode");
@@ -512,7 +698,7 @@
 
       function stopMicrophone() {
         try {
-          sons?.setAgentAudioRouted(false); // D5: route declaration is per-session
+          sons?.setAgentAudioRouted(false); // route declaration is per-session
         } catch { /* already torn down */ }
         try {
           sons?.stop();
@@ -542,14 +728,13 @@
         console.error("[sons] onError:", err);
       }
 
-      // Computer voice — two sources (WP-E2):
+      // Computer voice — two sources:
       //   speechSynthesis: today's default; NOT cancelable on Chrome/Edge
-      //     without `echoCancellation: "all"` + OS permission (F7 — cannot be
+      //     without `echoCancellation: "all"` + OS permission (cannot be
       //     captured into the AEC reference).
       //   audio buffer (routed): plays ./assets/agent-voice-sample.wav through
       //     the cancelable agent-audio route (createAgentAudioRoute) — the
-      //     browser classifies it as "remote participant" audio and cancels it
-      //     (D6/D8).
+      //     browser classifies it as "remote participant" audio and cancels it.
       //   voice dropdown (ttsVoice): the system TTS voices from
       //     speechSynthesis.getVoices() — applies to the synth source only.
       const VOICE_SAMPLE_URL = "./assets/agent-voice-sample.wav";
@@ -567,7 +752,7 @@
         const ab = await res.arrayBuffer();
         const decodeCtx = new AudioContext(); // one-off decode (route ctx is private by contract)
         try { voiceBuffer = await decodeCtx.decodeAudioData(ab); }
-        finally { decodeCtx.close().catch(() => {}); }
+        finally { decodeCtx.close().catch(() => { }); }
         return voiceBuffer;
       }
 
@@ -577,7 +762,7 @@
         const src = route.input.context.createBufferSource();
         src.buffer = buffer;
         src.loop = true;
-        src.connect(route.input); // the ONLY wiring (D8) — never also to ctx.destination
+        src.connect(route.input); // the ONLY wiring — never also to ctx.destination
         src.start();
         routedSource = src;
       }
@@ -646,6 +831,9 @@
       }
       populateTtsVoices();
       synth.addEventListener("voiceschanged", populateTtsVoices);
+      utterance.addEventListener("end", (event) => {
+        setVoiceUi(false);
+      });
 
       // -------------------------------------------------------------------------
       // Wiring

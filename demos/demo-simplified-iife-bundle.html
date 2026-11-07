@@ -4,6 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
   <title>Speak Or No Speak — simplified demo</title>
   <style>
     /* The only styles: super light gray background, dark gray text. */
@@ -49,6 +50,28 @@
     <small id="voiceNote"></small>
   </p>
 
+  <!-- rev-11.1: minimal STT row — real endpoints via mode select
+       (stub: raw WAV body → JSON · openai: multipart /v1/audio/transcriptions),
+       model id, optional API key. Single-line output instead of a log. -->
+  <p>
+    <input type="checkbox" id="transcribe">
+    <label for="transcribe">transcribe turns</label>
+    <select id="sttMode" aria-label="STT backend mode">
+      <option value="stub" selected>Stub (WAV body → JSON)</option>
+      <option value="openai">OpenAI-compatible (multipart)</option>
+    </select>
+    <input id="sttEndpoint" value="http://localhost:6000/transcribe" size="32"
+      placeholder="STT endpoint URL — stub: POST WAV → JSON · openai: …/v1/audio/transcriptions">
+  </p>
+  <p>
+    <input id="sttModel" type="text" size="40" disabled autocomplete="off"
+      aria-label="STT model id (OpenAI-compatible mode)"
+      placeholder="model id (OpenAI-compatible mode only, e.g. mlx-community/parakeet-tdt-0.6b-v3)">
+    <input id="sttApiKey" type="password" size="16" autocomplete="off" aria-label="STT API key (optional)"
+      placeholder="API key (optional)">
+  </p>
+  <p id="sttOut" aria-live="polite"></p>
+
   <!--
     demo-simplified-iife-bundle.html — minimal version of demo-iife-bundle.html
     (docs/04-embedding.md §4.4 "Mode 3 — prebuilt IIFE bundle").
@@ -56,7 +79,9 @@
     Differences from demo-iife-bundle.html:
       - only styles are the page colors (super light gray bg, dark gray text)
       - no listening dot — plain text status only
-      - no background-noise player, no STT/transcription row, no event log
+      - no background-noise player, no event log — but a minimal STT row
+        (rev-11.1: mode select + model + optional API key, single-line
+        output, no settings persistence)
       - the library comes from the CDN (jsDelivr GitHub mirror), not ../../build/
       - computer-voice row (rev-9): start/stop button + voice-source select —
         same wiring as demo-simplified-voice-iife-bundle.html
@@ -76,6 +101,12 @@
     const label = document.getElementById("label");
     const errEl = document.getElementById("err");
     const smartTurn = document.getElementById("smartTurn");
+    const transcribeToggle = document.getElementById("transcribe");
+    const sttMode = document.getElementById("sttMode");
+    const sttEndpoint = document.getElementById("sttEndpoint");
+    const sttModel = document.getElementById("sttModel");
+    const sttApiKey = document.getElementById("sttApiKey");
+    const sttOut = document.getElementById("sttOut");
 
     if (!bundle) {
       // The bundle <script> failed (offline / CDN down): render, never throw.
@@ -84,7 +115,42 @@
         "window.SpeakOrNoSpeak is missing — the IIFE bundle did not load from " +
         "https://cdn.jsdelivr.net/gh/zushicat/speak-or-no-speak-dev/build/speak-or-no-speak.iife.js";
     } else {
-      const { createSpeakOrNoSpeak, humanMessage, SmartTurnModel, createAgentAudioRoute } = bundle;
+      const { createSpeakOrNoSpeak, humanMessage, SmartTurnModel, CloudStubAdapter, encodeWav, createAgentAudioRoute } = bundle;
+
+      // -------------------------------------------------------------------
+      // rev-11.1: minimal STT wiring — stub mode reuses the bundle's
+      // CloudStubAdapter (raw WAV body → { text, confidence? } JSON); openai
+      // mode POSTs multipart (file + model) to an OpenAI-compatible
+      // /v1/audio/transcriptions endpoint. Fire-and-forget from onTurnEnd —
+      // failures land in the single output line, never in detection.
+      // -------------------------------------------------------------------
+      function transcribeTurn(audio) {
+        if (!transcribeToggle.checked) return;
+        const endpoint = sttEndpoint.value.trim();
+        if (!endpoint) return;
+        const mode = sttMode.value;
+        const token = sttApiKey.value.trim() || undefined;
+        let request;
+        if (mode === "openai") {
+          const form = new FormData();
+          form.append("file", encodeWav(audio, 16000), "turn.wav");
+          const model = sttModel.value.trim();
+          if (model) form.append("model", model);
+          const headers = {};
+          if (token) headers.Authorization = `Bearer ${token}`;
+          request = fetch(endpoint, { method: "POST", headers, body: form })
+            .then(async (res) => {
+              if (!res.ok) throw new Error(`STT endpoint responded ${res.status}`);
+              const type = res.headers.get("Content-Type") ?? "";
+              return type.includes("json") ? await res.json() : { text: (await res.text()).trim() };
+            });
+        } else {
+          request = new CloudStubAdapter({ endpoint, token }).transcribe(audio);
+        }
+        request
+          .then((t) => { sttOut.textContent = `💬 "${String(t.text ?? "")}" · ${mode}`; })
+          .catch((err) => { sttOut.textContent = `STT failed (${mode}): ${err.message}`; });
+      }
 
       let sons = null;
       let micRunning = false;
@@ -144,8 +210,9 @@
             onSpeechStart: () => {
               label.textContent = "listening";
             },
-            onTurnEnd: () => {
+            onTurnEnd: (e) => {
               label.textContent = "not listening";
+              transcribeTurn(e.audio); // rev-11.1 plug point — never affects detection
             },
             onLevel: () => { },
             onError: onError,
@@ -274,7 +341,7 @@
         const ab = await res.arrayBuffer();
         const decodeCtx = new AudioContext(); // one-off decode (route ctx is private by contract)
         try { voiceBuffer = await decodeCtx.decodeAudioData(ab); }
-        finally { decodeCtx.close().catch(() => {}); }
+        finally { decodeCtx.close().catch(() => { }); }
         return voiceBuffer;
       }
 
@@ -323,6 +390,12 @@
       // Wiring
       button.addEventListener("click", toggleMicrophone);
       voice.addEventListener("click", toggleComputerVoice);
+
+      // rev-11.1: the model field only applies to the OpenAI-compatible backend.
+      sttModel.disabled = sttMode.value !== "openai";
+      sttMode.addEventListener("change", () => {
+        sttModel.disabled = sttMode.value !== "openai";
+      });
 
       // Release the mic when the page is left (reload / bfcache).
       window.addEventListener("pagehide", () => {
