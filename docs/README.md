@@ -6,7 +6,7 @@ and when they **barge in while the agent is answering** — built on Silero VAD,
 adaptive endpointing, and browser echo cancellation, running entirely on the
 user's device.
 
-<p align="center"><img src="assets/turn-flow.svg" alt="Microphone audio flows through speech detection, turn decisions, and optional semantic checking to voice-agent events" width="900"></p>
+<p align="center"><img src="assets/turn-flow-light.svg" alt="Microphone audio flows through speech detection, turn decisions, and optional semantic checking to voice-agent events" width="900"></p>
 
 | Resource | Link |
 |---|---|
