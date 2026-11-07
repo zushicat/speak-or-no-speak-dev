@@ -4,6 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
   <title>Speak Or No Speak — demo</title>
   <style>
     body {
@@ -181,6 +182,8 @@
       justify-content: center;
       align-items: center;
       margin-top: 40px;
+      border-top: 1px solid #333;
+      padding-top: 20px;
     }
 
     /* rev-11: model + API key sit on a second line under the endpoint. */
@@ -272,6 +275,7 @@
 
     <div id="err"></div>
     <div id="dbg"></div>
+    <div style="border-top: 1px solid #666; padding-top: 10px;">Add noise</div>
     <div id="voiceRow">
       <button id="voice" aria-pressed="false">Start computer voice</button>
       <select id="voiceSrc" aria-label="Voice source">
@@ -298,12 +302,13 @@
         <input id="bgVolume" type="range" min="0" max="100" step="1" value="50">
       </div>
     </div>
+
     <div id="sttRow" hidden class="row">
       <input type="checkbox" id="transcribe">
       <label style="font-size:13px">transcribe turns</label>
       <select id="sttMode" aria-label="STT backend mode">
-        <option value="stub" selected>Stub (WAV body → JSON)</option>
-        <option value="openai">OpenAI-compatible (multipart)</option>
+        <option value="openai" selected>OpenAI-compatible (multipart)</option>
+        <option value="stub">Stub (WAV body → JSON)</option>
       </select>
       <input id="sttEndpoint" value="http://localhost:6000/transcribe"
         placeholder="STT endpoint URL — stub: POST WAV → JSON · openai: …/v1/audio/transcriptions" size="30">
