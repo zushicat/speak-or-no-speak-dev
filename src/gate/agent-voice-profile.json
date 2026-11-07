@@ -3,8 +3,8 @@
   "model": "wespeaker_en_voxceleb_resnet34.onnx",
   "dims": 256,
   "sampleRate": 16000,
-  "source": "demo/agent-voice-sample.wav",
-  "builtAt": "2026-11-04T13:31:35.541Z",
+  "source": "demos/simple-demos/agent-voice-sample.wav",
+  "builtAt": "2026-11-05T13:17:05.551Z",
   "embedding": [
     -0.04236,
     -0.02554,

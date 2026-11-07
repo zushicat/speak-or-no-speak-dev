@@ -4,6 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
   <title>Speak Or No Speak — demo</title>
   <style>
     body {
@@ -127,7 +128,8 @@
       cursor: pointer;
       background: #eee;
       line-height: 1.1;
-      max-width: 16rem; /* the TTS voice list has long entries — keep the row tidy */
+      max-width: 16rem;
+      /* the TTS voice list has long entries — keep the row tidy */
     }
 
     #voiceRow small {
@@ -174,24 +176,68 @@
 
     #sttRow {
       display: flex;
+      flex-wrap: wrap;
       gap: 10px;
+      row-gap: 8px;
       justify-content: center;
       align-items: center;
       margin-top: 40px;
+      border-top: 1px solid #333;
+      padding-top: 20px;
     }
 
-    #sttEndpoint {
+    /* rev-11: model + API key sit on a second line under the endpoint. */
+    #sttCfgRow {
+      flex-basis: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Shared box look for the STT text controls (rev-11). */
+    #sttEndpoint,
+    #sttModel,
+    #sttApiKey {
       appearance: none;
       border-radius: 10px;
       border: 1px solid #ddd;
-      width: 300px;
       height: 40px;
-      cursor: text;
-      display: grid;
-      place-content: center;
       padding-left: 5px;
       background-color: #eee;
+      font-size: 16px;
+      cursor: text;
+    }
+
+    #sttEndpoint {
+      width: 300px;
       margin-left: 17px;
+    }
+
+    /* The mode select keeps its native dropdown arrow (no appearance: none). */
+    #sttMode {
+      height: 40px;
+      padding: 0 5px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      background-color: #eee;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    #sttModel {
+      width: 260px;
+    }
+
+    #sttApiKey {
+      width: 150px;
+    }
+
+    /* Model is irrelevant in stub mode — WP-2 toggles disabled with the mode. */
+    #sttModel:disabled {
+      opacity: 0.45;
+      cursor: default;
     }
 
     #log {
@@ -201,7 +247,7 @@
       text-align: left;
       max-height: 10rem;
       overflow-y: auto;
-      color: #9ca3af;
+      color: #e5e9ef;
     }
 
     #log .err {
@@ -229,6 +275,7 @@
 
     <div id="err"></div>
     <div id="dbg"></div>
+    <div style="border-top: 1px solid #666; padding-top: 10px;">Add noise</div>
     <div id="voiceRow">
       <button id="voice" aria-pressed="false">Start computer voice</button>
       <select id="voiceSrc" aria-label="Voice source">
@@ -255,17 +302,28 @@
         <input id="bgVolume" type="range" min="0" max="100" step="1" value="50">
       </div>
     </div>
+
     <div id="sttRow" hidden class="row">
       <input type="checkbox" id="transcribe">
       <label style="font-size:13px">transcribe turns</label>
-      <input id="sttEndpoint" value="http://localhost:5175/transcribe" placeholder="STT endpoint URL (POST, WAV body)"
-        size="30">
+      <select id="sttMode" aria-label="STT backend mode">
+        <option value="openai" selected>OpenAI-compatible (multipart)</option>
+        <option value="stub">Stub (WAV body → JSON)</option>
+      </select>
+      <input id="sttEndpoint" value="http://localhost:6000/transcribe"
+        placeholder="STT endpoint URL — stub: POST WAV → JSON · openai: …/v1/audio/transcriptions" size="30">
+      <div id="sttCfgRow">
+        <input id="sttModel" type="text" aria-label="STT model id (OpenAI-compatible mode)"
+          placeholder="model id (e.g. mlx-community/parakeet-tdt-0.6b-v3)" size="26" disabled autocomplete="off">
+        <input id="sttApiKey" type="password" aria-label="STT API key (optional)" placeholder="API key (optional)"
+          size="14" autocomplete="off">
+      </div>
     </div>
     <div id="log"></div>
   </div>
   <!-- Version query busts the stale module cache while the dev server sends no
        Cache-Control header. Bump it when demo/main.js changes. -->
-  <script type="module" src="./main.js?v=5"></script>
+  <script type="module" src="./main.js?v=6"></script>
 </body>
 
 </html>

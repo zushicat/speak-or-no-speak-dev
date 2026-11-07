@@ -119,10 +119,11 @@ npm publish --dry-run   # verify the file list (recordings excluded)
 npm publish             # ships speak-or-no-speak@0.1.0 (ESM-only)
 ```
 
-The `files` field in [`package.json`](../package.json) ships `src/`, `demo/`,
-`assets/`, the harness/test utilities, and the two READMEs — it **excludes**
-`test/recordings/` (calibration audio) and `vendor/` (optional local mirror).
-`plans/` and `docs/` are development artifacts and not part of the package.
+The `files` field in [`package.json`](../package.json) ships `src/`,
+`demos/simple-demos/`, `assets/`, the harness/test utilities, and the two
+READMEs — it **excludes** `test/recordings/` (calibration audio) and `vendor/`
+(optional local mirror). `plans/` and `docs/` are development artifacts and not
+part of the package.
 
 ---
 

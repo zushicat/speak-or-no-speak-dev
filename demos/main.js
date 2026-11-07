@@ -6,6 +6,7 @@
  */
 import { createSpeakOrNoSpeak, humanMessage, SmartTurnModel, createAgentAudioRoute } from "../src/index.js";
 import { CloudStubAdapter } from "../src/stt/cloud-stub-adapter.js";
+import { encodeWav } from "../src/wav-export.js";
 
 const button = document.getElementById("start");
 const label = document.getElementById("label");
@@ -14,6 +15,9 @@ const dbg = document.getElementById("dbg");
 const smartTurn = document.getElementById("smartTurn");
 const transcribeToggle = document.getElementById("transcribe");
 const sttEndpoint = document.getElementById("sttEndpoint");
+const sttMode = document.getElementById("sttMode");
+const sttModel = document.getElementById("sttModel");
+const sttApiKey = document.getElementById("sttApiKey");
 const sttRow = document.getElementById("sttRow");
 const logEl = document.getElementById("log");
 const bgSound = document.getElementById("bgSound");
@@ -58,18 +62,132 @@ function logLine(text, isError = false) {
   while (logEl.children.length > 20) logEl.lastChild.remove();
 }
 
+// ---------------------------------------------------------------------------
+// rev-11: real STT backends — the mode select picks the request shape:
+//   stub   → CloudStubAdapter: raw WAV body → { text, confidence? } JSON
+//   openai → OpenAiCompatibleSttAdapter (below): multipart form-data with
+//            `file` + `model`, for OpenAI-style /v1/audio/transcriptions
+//            endpoints (LM Studio, Groq, OpenAI, …)
+// ---------------------------------------------------------------------------
+
+/**
+ * Demo-local adapter (plan rev-11 D1/D3): POSTs the turn audio as
+ * multipart/form-data — `file` = 16 kHz mono WAV, `model` when set — with
+ * `Authorization: Bearer …` when a key is set; parses `{ text }` JSON back
+ * with a plain-text fallback. Same contract as the `SttAdapter` plug point.
+ */
+class OpenAiCompatibleSttAdapter {
+  constructor(options = {}) {
+    if (!options.endpoint) throw new Error("OpenAiCompatibleSttAdapter requires an endpoint");
+    this.endpoint = options.endpoint;
+    this.model = options.model;
+    this.token = options.token;
+  }
+
+  async transcribe(audio) {
+    const form = new FormData();
+    form.append("file", encodeWav(audio, 16000), "turn.wav");
+    if (this.model) form.append("model", this.model);
+    const headers = {};
+    if (this.token) headers.Authorization = `Bearer ${this.token}`;
+    // No manual Content-Type — the browser must add the multipart boundary.
+    const res = await fetch(this.endpoint, { method: "POST", headers, body: form });
+    if (!res.ok) throw new Error(`STT endpoint responded ${res.status}`);
+    const type = res.headers.get("Content-Type") ?? "";
+    const data = type.includes("json") ? await res.json() : { text: (await res.text()).trim() };
+    return {
+      text: String(data.text ?? ""),
+      confidence: typeof data.confidence === "number" ? data.confidence : undefined,
+    };
+  }
+}
+
+/** Adapter factory from the current UI values (null = nothing configured). */
+function buildSttAdapter() {
+  const endpoint = sttEndpoint.value.trim();
+  if (!endpoint) return null;
+  const token = sttApiKey.value.trim() || undefined;
+  if (sttMode.value === "openai") {
+    return new OpenAiCompatibleSttAdapter({
+      endpoint,
+      model: sttModel.value.trim() || undefined,
+      token,
+    });
+  }
+  return new CloudStubAdapter({ endpoint, token });
+}
+
+/** Network-level rejections ("Failed to fetch") mean an unreachable server or
+ *  missing CORS in practice — name the likely cause (plan rev-11 §5). */
+function sttFailureMessage(mode, err) {
+  const base = `STT failed (${mode}): ${err.message}`;
+  return err instanceof TypeError
+    ? `${base} — unreachable, or CORS not enabled on the STT server?`
+    : base;
+}
+
 /** WP9: STT strictly outside the real-time loop — called from onTurnEnd only,
  *  fire-and-forget with a catch; failures never touch detection events. */
 function transcribeTurn(audio) {
-  if (!transcribeToggle.checked || !sttEndpoint.value.trim()) return;
+  if (!transcribeToggle.checked) return;
+  let adapter;
   try {
-    const adapter = new CloudStubAdapter({ endpoint: sttEndpoint.value.trim() });
-    adapter.transcribe(audio)
-      .then((t) => logLine(`💬 "${t.text}"${t.confidence !== undefined ? ` (${(t.confidence * 100).toFixed(0)}%)` : ""}`))
-      .catch((err) => logLine(`STT failed: ${err.message}`, true));
+    adapter = buildSttAdapter();
   } catch (err) {
     logLine(`STT setup failed: ${err.message}`, true);
+    return;
   }
+  if (!adapter) return;
+  const mode = sttMode.value; // captured: a mid-flight mode switch logs the serving mode
+  adapter.transcribe(audio)
+    .then((t) => logLine(`💬 "${t.text}"${t.confidence !== undefined ? ` (${(t.confidence * 100).toFixed(0)}%)` : ""} · ${mode}`))
+    .catch((err) => logLine(sttFailureMessage(mode, err), true));
+}
+
+// rev-11 D6: the model field only applies to the OpenAI-compatible backend.
+function syncSttUi() {
+  sttModel.disabled = sttMode.value !== "openai";
+}
+
+// rev-11 D7: STT settings persistence — dev-demo convenience; the API key
+// lives in this browser's localStorage (same caveat class as the adapter
+// docstrings: never do this in production).
+const STT_SETTINGS_KEY = "sons.stt";
+
+function saveSttSettings() {
+  try {
+    localStorage.setItem(STT_SETTINGS_KEY, JSON.stringify({
+      mode: sttMode.value,
+      endpoint: sttEndpoint.value,
+      model: sttModel.value,
+      apiKey: sttApiKey.value,
+    }));
+  } catch { /* private mode / quota — persistence is best-effort */ }
+}
+
+let sttSaveTimer = 0;
+function scheduleSttSave() {
+  clearTimeout(sttSaveTimer);
+  sttSaveTimer = setTimeout(saveSttSettings, 300);
+}
+
+function restoreSttSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STT_SETTINGS_KEY) ?? "null");
+    if (!saved) return;
+    if (saved.mode === "stub" || saved.mode === "openai") sttMode.value = saved.mode;
+    if (typeof saved.endpoint === "string") sttEndpoint.value = saved.endpoint;
+    if (typeof saved.model === "string") sttModel.value = saved.model;
+    if (typeof saved.apiKey === "string") sttApiKey.value = saved.apiKey;
+  } catch { /* corrupt JSON → keep markup defaults */ }
+}
+
+restoreSttSettings();
+syncSttUi();
+sttMode.addEventListener("change", syncSttUi);
+for (const el of [sttMode, sttEndpoint, sttModel, sttApiKey]) {
+  el.addEventListener("input", scheduleSttSave);
+  el.addEventListener("change", scheduleSttSave);
 }
 
 // ---------------------------------------------------------------------------
@@ -293,7 +411,7 @@ async function ensureVoiceBuffer() {
   const ab = await res.arrayBuffer();
   const decodeCtx = new AudioContext(); // one-off decode (route ctx is private by contract)
   try { voiceBuffer = await decodeCtx.decodeAudioData(ab); }
-  finally { decodeCtx.close().catch(() => {}); }
+  finally { decodeCtx.close().catch(() => { }); }
   return voiceBuffer;
 }
 
@@ -372,6 +490,9 @@ function populateTtsVoices() {
 }
 populateTtsVoices();
 synth.addEventListener("voiceschanged", populateTtsVoices);
+utterance.addEventListener("end", (event) => {
+  setVoiceUi(false);
+});
 
 // ---------------------------------------------------------------------------
 // Wiring

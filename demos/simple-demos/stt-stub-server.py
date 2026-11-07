@@ -4,14 +4,14 @@
 THIS IS JUST A MOCKUP
 
 POST /transcribe with a WAV body → canned JSON transcription with CORS.
-Run: python3 demo/stt-stub-server.py [port]   (default 5175)
+Run: python3 demos/simple-demos/stt-stub-server.py [port]   (default 6000)
 """
 
 import json
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 5175
+PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 6000
 
 
 class Handler(BaseHTTPRequestHandler):

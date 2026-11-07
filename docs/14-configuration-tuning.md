@@ -94,7 +94,7 @@ rhythm of your real users, then tune.
 Both degradations also emit one-time warnings via `onError`
 (`engine-fallback`, `no-aec`) — **the module never degrades silently**, and
 your UI shouldn't either. The demo maps both to `humanMessage` text
-([`demo/main.js`](../demo/main.js)).
+([`demos/simple-demos/main.js`](../demos/simple-demos/main.js)).
 
 ## 14.6 Debug traces
 

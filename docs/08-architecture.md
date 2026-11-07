@@ -18,7 +18,7 @@ The components and their roles:
 |---|---|---|
 | User → Microphone | outside the page | speaks · barges in; `getUserMedia` with AEC/NS/AGC |
 | jsDelivr CDN | external, pinned | `vad-web` 0.0.31 + `ort-web` 1.22.0 via `<script>` tags |
-| Demo page | `demo/index.html` + `demo/main.js` | UI mapping only (browser tab, secure context) |
+| Demo page | `demos/simple-demos/index.html` + `demos/simple-demos/main.js` | UI mapping only (browser tab, secure context) |
 | `createSpeakOrNoSpeak()` | [`src/speak-or-no-speak.js`](../src/speak-or-no-speak.js) | facade · wires engine ↔ detector · public API |
 | `SileroVadAdapter` | [`src/vad/silero-vad-adapter.js`](../src/vad/silero-vad-adapter.js) | default engine — Silero v5 via vad-web; emits `VadFrame` every 32 ms |
 | `EnergyVad` | [`src/vad/energy-vad.js`](../src/vad/energy-vad.js) | degraded fallback — RMS vs adaptive noise floor |

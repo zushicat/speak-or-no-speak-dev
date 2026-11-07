@@ -31,7 +31,7 @@ or the Node alternative:
 npm run start:serve  # npx --yes serve -l 5173 .
 ```
 
-Then open **<http://localhost:5173/demo/>**.
+Then open **<http://localhost:5173/demos/simple-demos/>**.
 
 Why a server at all? Two reasons: ES modules do not load over `file://`, and
 microphone access requires a **secure context** — which `http://localhost`
@@ -44,8 +44,8 @@ If you want to try the **transcription plug point** (the demo's "transcribe
 turns" row), start the dev-only stub in a second terminal:
 
 ```bash
-python3 demo/stt-stub-server.py          # listens on http://localhost:5175
-python3 demo/stt-stub-server.py 6000     # custom port
+python3 demos/simple-demos/stt-stub-server.py          # listens on http://localhost:6000
+python3 demos/simple-demos/stt-stub-server.py 6001     # custom port
 ```
 
 Important expectations, up front:
@@ -62,7 +62,7 @@ detection behavior.
 
 ## 2.4 First run walkthrough
 
-1. Open <http://localhost:5173/demo/>.
+1. Open <http://localhost:5173/demos/simple-demos/>.
 2. Click **Start microphone** (this is a user gesture — Safari requires one for
    mic access).
 3. Allow the microphone permission prompt.

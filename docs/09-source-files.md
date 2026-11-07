@@ -9,7 +9,8 @@ repository layout first, then the files grouped by directory.
 ## 9.1 Repository layout and the zero-build philosophy
 
 ```
-demo/                 demo page (index.html, main.js, stt-stub-server.py, assets/)
+demos/                demos: simple-demos/ (the demo page: index.html, main.js,
+                      stt-stub-server.py, assets/) · hey-buddy/ (the Hey, Buddy! chat demo)
 src/                  the module (facade, VAD adapters, turn state machine)
   vad/                engine interface + Silero adapter + energy fallback
                       + aec-scope.js (AEC scope negotiation/classification, rev-8.1 WP-E1)
@@ -224,11 +225,11 @@ the encoder lives in `src/` and its tests in `test/util/`.
   fbank is useless). Shared by the browser gate and the offline profile
   builder.
 - **`agent-voice-profile.json`** — the committed 3.7 KB profile (built from
-  `demo/agent-voice-sample.wav` by
+  `demos/simple-demos/agent-voice-sample.wav` by
   `scripts/build-agent-voice-profile.mjs`; the MODEL is gitignored
   `/vendor/`).
 
-## 9.12 `demo/` — the demo files
+## 9.12 `demos/simple-demos/` — the simple demo files
 
 - **`index.html`** — the UI (Chapter 3) plus the two pinned CDN tags; the
   module script is cache-busted with a version query (`main.js?v=3`).
@@ -238,6 +239,23 @@ the encoder lives in `src/` and its tests in `test/util/`.
 - **`stt-stub-server.py`** — dev-only canned STT mockup ([§3.7](03-demo.md#37-the-python-script-what-it-does-and-what-it-does-not-do)).
 - **`assets/`** — the five Pixabay ambient MP3s + `sources.md` (original
   filenames, lengths, license notes).
+
+## 9.13 `demos/hey-buddy/` — the Hey, Buddy! chat demo (static)
+
+- **`index.html`** — the page: the two pinned runtime-lib CDN tags (`ort`,
+  `vad-web`), the module loaded from the jsDelivr build, `styles.css`, and the
+  app bundle (`app.js?v=1`).
+- **`app.js`** — the whole app as one unminified esbuild bundle, type-stripped
+  from the hey-buddy upstream TypeScript (rev-10.1; provenance and the
+  pre-migration snapshot are documented in its README). Editable directly —
+  bump the `?v=` query in `index.html` when changed.
+- **`styles.css`** — the demo stylesheet.
+- **`favicon.svg`** · **`vendor/`** — page icon; Smart Turn weights
+  (`smart-turn-v3.2-cpu.onnx`, gitignored, manual download).
+
+The chat pipeline and the echo/scope semantics are described in
+[Chapter 3 §3.10](03-demo.md#310-the-hey-buddy-demo-demoshey-buddy) and the
+[demo README](../demos/hey-buddy/README.md).
 
 ---
 

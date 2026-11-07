@@ -35,7 +35,7 @@
 
 7. **[How detection works: the methods](07-detection-methods.md)** — problem decomposition · frames & probability · hysteresis · onset confirmation · the state machine · redemption · adaptive redemption · interior pauses · turn guards · barge-in confirm & grace · worked examples · turn audio
 8. **[Architecture](08-architecture.md)** — component map (archify webapp + screenshot) · data flow · engine abstraction · facade wiring · the pure state machine · audio capture pipeline · threading model · design decisions
-9. **[Source file guide](09-source-files.md)** — layout & zero-build philosophy · what every file in `src/` (and `demo/`) does and does not do
+9. **[Source file guide](09-source-files.md)** — layout & zero-build philosophy · what every file in `src/` (and `demos/`) does and does not do
 10. **[The VAD engines](10-vad-engines.md)** — why Silero · vad-web's role & dual-mode resolution · runtime-verified findings · AudioWorklet hang & ScriptProcessor fallback · the energy fallback & its probability model · custom engines
 11. **[Runtime libraries](11-runtime-libraries.md)** — onnxruntime-web & vad-web: what they are for · **why neither is in the bundle** · what the browser fetches at runtime · offline & blocked-CDN operation · upgrading the pins
 12. **[Smart Turn: the optional end-of-turn model](12-smart-turn.md)** — what it is & where it comes from · when it runs & fail-open semantics · the Whisper feature pipeline · setup · measured performance · when to use it

@@ -63,10 +63,10 @@ then:
 </script>
 ```
 
-**Live demo:** [`demo/demo-esm-bundle.html`](../demo/demo-esm-bundle.html) —
+**Live demo:** [`demos/simple-demos/demo-esm-bundle.html`](../demos/simple-demos/demo-esm-bundle.html) —
 same UI and wiring as the [demo page](03-demo.md), but importing **only the
 prebuilt bundle**. Serve the checkout (`npm start`) and open
-[`http://localhost:5173/demo/demo-esm-bundle.html`](http://localhost:5173/demo/demo-esm-bundle.html).
+[`http://localhost:5173/demos/simple-demos/demo-esm-bundle.html`](http://localhost:5173/demos/simple-demos/demo-esm-bundle.html).
 
 Facts about the bundle ([Chapter 16](16-build-test-publish.md)):
 
@@ -90,11 +90,11 @@ Same two CDN tags; the IIFE build defines a global:
 </script>
 ```
 
-**Live demo:** [`demo/demo-iife-bundle.html`](../demo/demo-iife-bundle.html) —
+**Live demo:** [`demos/simple-demos/demo-iife-bundle.html`](../demos/simple-demos/demo-iife-bundle.html) —
 same UI and wiring as the [demo page](03-demo.md), but the API comes from the
 `window.SpeakOrNoSpeak` global (no modules). Serve the checkout (`npm start`)
 and open
-[`http://localhost:5173/demo/demo-iife-bundle.html`](http://localhost:5173/demo/demo-iife-bundle.html).
+[`http://localhost:5173/demos/simple-demos/demo-iife-bundle.html`](http://localhost:5173/demos/simple-demos/demo-iife-bundle.html).
 
 ~26.0 KB minified (+ sourcemap). Everything else behaves exactly like the ESM
 bundle.

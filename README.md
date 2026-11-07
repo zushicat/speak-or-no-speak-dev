@@ -6,7 +6,7 @@ Speak Or No Speak is a browser JavaScript layer for **conversational turn taking
 
 <p align="center"><img src="docs/assets/turn-flow.svg" alt="Microphone audio flows through speech detection, turn decisions, and optional semantic checking to voice-agent events" width="900"></p>
 
-<p align="center"><a href="https://zushicat.github.io/speak-or-no-speak-dev/">Try the live demo</a> · <a href="docs/README.md">Read the guide</a> · <a href="demo/">Explore the demo code</a></p>
+<p align="center"><a href="https://zushicat.github.io/speak-or-no-speak-dev/">Try the live demo</a> · <a href="docs/README.md">Read the guide</a> · <a href="demos/simple-demos/">Explore the demo code</a></p>
 
 ## Why use it?
 
@@ -30,11 +30,18 @@ A voice activity detector can tell you whether a frame sounds like speech. A tal
 npm start
 ```
 
-Open [http://localhost:5173/demo/](http://localhost:5173/demo/) and click **Start microphone**. You can also run `npm run start:serve`. The demo has optional background sounds to exercise detection under noise. Microphone access requires localhost or HTTPS, and the default Silero path loads pinned browser libraries and model assets from jsDelivr.
+Open [http://localhost:5173/demos/simple-demos/](http://localhost:5173/demos/simple-demos/) and click **Start microphone**. You can also run `npm run start:serve`. The demo has optional background sounds to exercise detection under noise. Microphone access requires localhost or HTTPS, and the default Silero path loads pinned browser libraries and model assets from jsDelivr.
+
+The **Hey, Buddy! chat demo** — a standalone static app at
+[`demos/hey-buddy/`](demos/hey-buddy/) — runs from the same server: open
+[http://localhost:5173/demos/hey-buddy/](http://localhost:5173/demos/hey-buddy/).
+It is a full conversation (turn → STT → LLM → speech) and needs the local
+parakeet STT server on `:18001` and LM Studio (`--cors`) on `:1234`; see its
+[README](demos/hey-buddy/README.md).
 
 ## Use it in a page
 
-The source version needs the two browser runtime scripts shown below. Call `start()` from a click or another user gesture. See [Getting started](docs/01-getting-started.md) for bundles and npm use.
+The source version needs the two browser runtime scripts shown below. Call `start()` from a click or another user gesture. See [Getting started](docs/02-getting-started.md) for bundles and npm use.
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js"></script>
@@ -65,7 +72,7 @@ The source version needs the two browser runtime scripts shown below. Call `star
 </script>
 ```
 
-The `onInterrupt` callback signals an interruption; the user's audio arrives later in `onTurnEnd` with `afterInterrupt: true`. Always clear the agent-speaking flag when playback has actually stopped. [Agent integration](docs/03-agent-integration.md) shows a complete lifecycle.
+The `onInterrupt` callback signals an interruption; the user's audio arrives later in `onTurnEnd` with `afterInterrupt: true`. Always clear the agent-speaking flag when playback has actually stopped. [Agent integration](docs/06-agent-integration.md) shows a complete lifecycle.
 
 ## Documentation
 
@@ -77,9 +84,9 @@ The `onInterrupt` callback signals an interruption; the user's audio arrives lat
 6. [Diagnose failures and limitations](docs/06-troubleshooting.md)
 
 ## Misc
-- Read the [documentation](/Users/karin/_programming/speak-or-no-speak/docs/README.md)
-    - [Read here](/Users/karin/_programming/speak-or-no-speak/docs/03-demo.md) how to start the [demo](/Users/karin/_programming/speak-or-no-speak/demo)
-- [Inspect the architecture](/Users/karin/_programming/speak-or-no-speak/docs/archify/speak-or-no-speak.architecture.html)
+- Read the [documentation](docs/README.md)
+    - [Read here](docs/03-demo.md) how to start the [simple demos](demos/simple-demos)
+- [Inspect the architecture](docs/archify/speak-or-no-speak.architecture.html)
 
 ### Demo
 Check out the running demo: [https://zushicat.github.io/speak-or-no-speak-dev/](https://zushicat.github.io/speak-or-no-speak-dev/)
