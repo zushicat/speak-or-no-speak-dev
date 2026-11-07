@@ -79,13 +79,13 @@ text), the answer generation (e.g. a language model), and the voice output
 ```
                  ┌────────────────────── your web app ──────────────────────┐
                  │                                                          │
-  user speaks ──►  [ Speak Or No Speak ] ── turn audio ──► transcription ──┤
+  user speaks ──►  [ Speak Or No Speak ] ── turn audio ──► transcription ───┤
                  │        ▲   │                                             │
-                 │        │   └── speech started / interrupted ──┐           │
-                 │        │                                      ▼           │
-                 │        │                                 answer logic      │
-                 │        │                                      │           │
-                 │        └──────────── your voice output ◄──────┘           │
+                 │        │   └── speech started / interrupted ──┐          │
+                 │        │                                      ▼          │
+                 │        │                                 answer logic    │
+                 │        │                                      │          │
+                 │        └──────────── your voice output ◄──────┘          │
                  └──────────────────────────────────────────────────────────┘
 ```
 
